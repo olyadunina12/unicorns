@@ -1,0 +1,8 @@
+.vs/*
+bin/*
+obj/*
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.exe
+*.swp
