@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+Basic Unicorn cards cannot enter any other player's Stable.

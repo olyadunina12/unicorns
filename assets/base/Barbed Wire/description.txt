@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+Each time a Unicorn card enters or leaves your stable, DISCARD a card.

@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+DRAW 3 cards and DISCARD a card.

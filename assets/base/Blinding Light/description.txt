@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+Triggered effects of your Unicorn cards do not activate.

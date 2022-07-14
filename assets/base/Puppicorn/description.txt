@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+Each time any player begins their turn, move this card to that player's Stable. This card cannot be sacrificed or destroyed.

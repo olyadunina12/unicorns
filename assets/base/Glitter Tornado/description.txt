@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+Return a card in each player's Stable to that player's hand.

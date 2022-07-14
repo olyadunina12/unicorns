@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+All of your Unicorns are considered Pandas. Cards that affect Unicorn cards do not affect your Pandas.

@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+When this card enters your Stable, you may choose a Magic card from the discard pile and add it to your hand. If this card would be sacrificed or destroyed, return it to your hand instead.

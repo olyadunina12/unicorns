@@ -1,4 +1,1 @@
-Packs:
-						
-
-                                Base Game
+Cards you play cannot be Neigh'd.
