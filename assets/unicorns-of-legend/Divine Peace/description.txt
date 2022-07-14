@@ -1,0 +1,1 @@
+Your card effects cannot DESTROY cards.

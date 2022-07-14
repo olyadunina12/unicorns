@@ -1,0 +1,1 @@
+Force each other player to reveal their hand to you. OR Force each other player to give you a card from their hand.

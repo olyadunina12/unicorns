@@ -1,0 +1,1 @@
+Search the deck for a Magic card. Play it immediately, then shuffle the deck.
