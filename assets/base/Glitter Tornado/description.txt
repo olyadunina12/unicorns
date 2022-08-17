@@ -1,1 +1,3 @@
-Return a card in each player's Stable to that player's hand.
+Type: Magic
+Copies: 2
+Description: Return a card in each player's Stable to that player's hand.

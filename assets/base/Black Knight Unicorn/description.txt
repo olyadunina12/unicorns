@@ -1,1 +1,3 @@
-If 1 of your Unicorn cards would be destroyed, you may SACRIFICE this card instead.
+Type: Magical Unicorn
+Copies: 1
+Description: If 1 of your Unicorn cards would be destroyed, you may SACRIFICE this card instead.

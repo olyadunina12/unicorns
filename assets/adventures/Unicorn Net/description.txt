@@ -1,1 +1,3 @@
-Play this card when any player tries to SACRIFICE or DESTROY a card. Add that card to your hand instead.
+Type: Instant
+Copies: 2
+Description: Play this card when any player tries to SACRIFICE or DESTROY a card. Add that card to your hand instead.

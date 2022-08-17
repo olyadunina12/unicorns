@@ -1,1 +1,3 @@
-Your Unicorn cards cannot be destroyed or otherwise affected by triggered effects from any other player's cards.
+Type: Upgrade
+Copies: 2
+Description: Your Unicorn cards cannot be destroyed or otherwise affected by triggered effects from any other player's cards.

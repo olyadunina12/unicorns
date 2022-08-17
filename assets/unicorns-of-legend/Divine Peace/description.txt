@@ -1,1 +1,3 @@
-Your card effects cannot DESTROY cards.
+Type: Downgrade
+Copies: 2
+Description: Your card effects cannot DESTROY cards.

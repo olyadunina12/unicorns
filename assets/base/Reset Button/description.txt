@@ -1,1 +1,3 @@
-Each player must SACRIFICE all Upgrade and Downgrade cards. Shuffle the discard pile into the deck.
+Type: Magic
+Copies: 1
+Description: Each player must SACRIFICE all Upgrade and Downgrade cards. Shuffle the discard pile into the deck.

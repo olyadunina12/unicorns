@@ -1,1 +1,3 @@
-Trade hands with any other player.
+Type: Magic
+Copies: 2
+Description: Trade hands with any other player.

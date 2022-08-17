@@ -1,1 +1,3 @@
-Each time one of your unicorn cards would be sacrificed or destroyed, you may DISCARD 2 cards instead.
+Type: Upgrade
+Copies: 1
+Description: Each time one of your unicorn cards would be sacrificed or destroyed, you may DISCARD 2 cards instead.

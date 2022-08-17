@@ -1,1 +1,3 @@
-When this card enters your Stable, you may bring a Basic Unicorn card from your hand directly into your Stable.
+Type: Magical Unicorn
+Copies: 1
+Description: When this card enters your Stable, you may bring a Basic Unicorn card from your hand directly into your Stable.

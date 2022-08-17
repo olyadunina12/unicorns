@@ -1,1 +1,3 @@
-Look mom! I'm a Unicorn!
+Type: Basic Unicorn
+Copies: 3
+Description: Look mom! I'm a Unicorn!

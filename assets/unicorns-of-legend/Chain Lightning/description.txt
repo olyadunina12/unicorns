@@ -1,1 +1,3 @@
-Choose any other player and DESTROY a Unicorn card in that player's Stable. That player may choose any other player and DESTROY a Unicorn card in that player's Stable.
+Type: Magic
+Copies: 2
+Description: Choose any other player and DESTROY a Unicorn card in that player's Stable. That player may choose any other player and DESTROY a Unicorn card in that player's Stable.

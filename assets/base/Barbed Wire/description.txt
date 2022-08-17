@@ -1,1 +1,3 @@
-Each time a Unicorn card enters or leaves your stable, DISCARD a card.
+Type: Downgrade
+Copies: 1
+Description: Each time a Unicorn card enters or leaves your stable, DISCARD a card.

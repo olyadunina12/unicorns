@@ -1,1 +1,3 @@
-This card counts for 2 Unicorns. You cannot play any Instant cards.
+Type: Magical Unicorn
+Copies: 1
+Description: This card counts for 2 Unicorns. You cannot play any Instant cards.

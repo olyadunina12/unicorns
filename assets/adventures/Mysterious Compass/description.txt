@@ -1,1 +1,3 @@
-DISCARD 3 cards, then take another turn. OR Move a Unicorn card in your Stable to another player's Stable, then STEAL a Unicorn card from that player's Stable.
+Type: Magic
+Copies: 1
+Description: DISCARD 3 cards, then take another turn. OR Move a Unicorn card in your Stable to another player's Stable, then STEAL a Unicorn card from that player's Stable.

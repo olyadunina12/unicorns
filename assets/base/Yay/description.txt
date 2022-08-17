@@ -1,1 +1,3 @@
-Cards you play cannot be Neigh'd.
+Type: Upgrade
+Copies: 2
+Description: Cards you play cannot be Neigh'd.

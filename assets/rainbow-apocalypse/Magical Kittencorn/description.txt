@@ -1,1 +1,3 @@
-This card cannot be destroyed by Magic cards.
+Type: Magical Unicorn
+Copies: 2
+Description: This card cannot be destroyed by Magic cards.

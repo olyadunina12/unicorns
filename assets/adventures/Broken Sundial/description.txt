@@ -1,1 +1,3 @@
-Skip your Beginning of Turn phase.
+Type: Downgrade
+Copies: 1
+Description: Skip your Beginning of Turn phase.

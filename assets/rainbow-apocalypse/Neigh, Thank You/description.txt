@@ -1,1 +1,3 @@
-Play this card when any player tries to play a card. Stop that player's card from coming into play and send it to the discard pile instead. Each of you draw a card.
+Type: Instant
+Copies: 3
+Description: Play this card when any player tries to play a card. Stop that player's card from coming into play and send it to the discard pile instead. Each of you draw a card.

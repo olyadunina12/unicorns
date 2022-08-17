@@ -1,1 +1,3 @@
-Your hand limit increases by 3 cards.
+Type: Upgrade
+Copies: 1
+Description: Your hand limit increases by 3 cards.

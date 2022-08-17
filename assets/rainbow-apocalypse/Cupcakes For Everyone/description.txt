@@ -1,1 +1,3 @@
-All of your Upgrade cards affect each player's Stable.
+Type: Downgrade
+Copies: 2
+Description: All of your Upgrade cards affect each player's Stable.

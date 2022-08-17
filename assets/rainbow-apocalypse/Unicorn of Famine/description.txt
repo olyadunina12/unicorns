@@ -1,1 +1,3 @@
-Each player has a hand limit of 2 cards.
+Type: Magical Unicorn
+Copies: 1
+Description: Each player has a hand limit of 2 cards.

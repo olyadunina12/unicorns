@@ -1,1 +1,3 @@
-Pumpkin spice is the pumpkin spice of life.
+Type: Basic Unicorn
+Copies: 3
+Description: Pumpkin spice is the pumpkin spice of life.

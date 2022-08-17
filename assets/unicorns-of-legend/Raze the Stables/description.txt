@@ -1,1 +1,3 @@
-SACRIFICE or DESTROY an Upgrade or Downgrade card.
+Type: Magic
+Copies: 3
+Description: SACRIFICE or DESTROY an Upgrade or Downgrade card.

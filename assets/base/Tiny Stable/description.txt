@@ -1,1 +1,3 @@
-If at any time you have more than 5 Unicorns in your Stable, SACRIFICE a Unicorn card.
+Type: Downgrade
+Copies: 1
+Description: If at any time you have more than 5 Unicorns in your Stable, SACRIFICE a Unicorn card.

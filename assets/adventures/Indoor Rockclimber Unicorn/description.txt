@@ -1,1 +1,3 @@
-"Always reach for new heights. Just don't bump your head on the ceiling."
+Type: Basic Unicorn
+Copies: 3
+Description: "Always reach for new heights. Just don't bump your head on the ceiling."

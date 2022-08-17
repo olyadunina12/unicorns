@@ -1,1 +1,3 @@
-SACRIFICE 4 Unicorn cards, then search the deck for 4 Unicorn cards and bring them directly into your Stable. Shuffle the deck.
+Type: Magic
+Copies: 1
+Description: SACRIFICE 4 Unicorn cards, then search the deck for 4 Unicorn cards and bring them directly into your Stable. Shuffle the deck.

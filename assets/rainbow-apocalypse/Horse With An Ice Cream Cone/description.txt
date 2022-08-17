@@ -1,1 +1,3 @@
-Ice cream always saves the day!
+Type: Basic Unicorn
+Copies: 3
+Description: Ice cream always saves the day!

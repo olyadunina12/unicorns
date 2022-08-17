@@ -1,1 +1,3 @@
-Crafter of the finest horseshoes in all the realm.
+Type: Basic Unicorn
+Copies: 3
+Description: Crafter of the finest horseshoes in all the realm.

@@ -1,1 +1,3 @@
-DRAW 3 cards and DISCARD a card.
+Type: Magic
+Copies: 1
+Description: DRAW 3 cards and DISCARD a card.

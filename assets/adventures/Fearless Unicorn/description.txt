@@ -1,1 +1,3 @@
-If this card is sacrificed or destroyed, you may add an Instant card from the discard pile to your hand.
+Type: Magical Unicorn
+Copies: 1
+Description: If this card is sacrificed or destroyed, you may add an Instant card from the discard pile to your hand.

@@ -1,1 +1,3 @@
-Your Unicorn cards cannot be destroyed.
+Type: Upgrade
+Copies: 1
+Description: Your Unicorn cards cannot be destroyed.

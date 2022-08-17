@@ -1,1 +1,3 @@
-Your hand must be visible to all players at all times.
+Type: Downgrade
+Copies: 1
+Description: Your hand must be visible to all players at all times.

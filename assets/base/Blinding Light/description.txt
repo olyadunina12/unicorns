@@ -1,1 +1,3 @@
-Triggered effects of your Unicorn cards do not activate.
+Type: Downgrade
+Copies: 1
+Description: Triggered effects of your Unicorn cards do not activate.

@@ -1,1 +1,3 @@
-SACRIFICE any number of cards, then DESTROY the same number of cards.
+Type: Magic
+Copies: 1
+Description: SACRIFICE any number of cards, then DESTROY the same number of cards.

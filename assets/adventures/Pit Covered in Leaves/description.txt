@@ -1,1 +1,3 @@
-If this card is in your Stable at the beginning of your turn, you may SACRIFICE this card, then STEAL a Unicorn card.
+Type: Upgrade
+Copies: 2
+Description: If this card is in your Stable at the beginning of your turn, you may SACRIFICE this card, then STEAL a Unicorn card.

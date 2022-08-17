@@ -1,1 +1,3 @@
-"OOOH! What's that??"
+Type: Basic Unicorn
+Copies: 3
+Description: "OOOH! What's that??"

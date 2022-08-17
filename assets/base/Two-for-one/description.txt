@@ -1,1 +1,3 @@
-SACRIFICE a card, then DESTROY 2 cards.
+Type: Magic
+Copies: 2
+Description: SACRIFICE a card, then DESTROY 2 cards.

@@ -1,1 +1,3 @@
-Choose any player. That player must skip their next turn.
+Type: Magic
+Copies: 2
+Description: Choose any player. That player must skip their next turn.

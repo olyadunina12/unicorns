@@ -1,1 +1,3 @@
-If this card leaves your Stable, you may DESTROY a Unicorn card.
+Type: Magical Unicorn
+Copies: 1
+Description: If this card leaves your Stable, you may DESTROY a Unicorn card.

@@ -1,1 +1,3 @@
-A noble steed. A literal high horse.
+Type: Basic Unicorn
+Copies: 3
+Description: A noble steed. A literal high horse.

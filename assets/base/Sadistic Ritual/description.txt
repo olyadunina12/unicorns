@@ -1,1 +1,3 @@
-If this card is in your Stable at the beginning of your turn, SACRIFICE a Unicorn card, then DRAW a card.
+Type: Downgrade
+Copies: 1
+Description: If this card is in your Stable at the beginning of your turn, SACRIFICE a Unicorn card, then DRAW a card.
