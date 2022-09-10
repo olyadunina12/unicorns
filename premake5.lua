@@ -57,7 +57,7 @@ project "unicorns-server"
 	language "C++"
 	targetdir "bin/%{cfg.buildcfg}"
 
-	files { "Client/**.*" }
+	files { "Server/**.*" }
 
 	filter "configurations:*"
 		defines { "SFML_STATIC" }
@@ -81,7 +81,6 @@ project "unicorns-server"
 			-- "sfml-system-s",
 			"sfml-network-s"
 		}
-
 
 project "unicorns-connect"
 	kind "StaticLib"

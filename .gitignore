@@ -6,3 +6,4 @@ obj/*
 *.vcxproj.user
 *.exe
 *.swp
+dependencies/*
