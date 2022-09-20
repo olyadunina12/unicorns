@@ -33,7 +33,7 @@ CardVisual CreateCard(sf::Texture& tex, sf::Vector2f& pos)
 
 int main(void)
 {
-	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns", sf::Style::None);
+	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
 
     sf::Texture bgTexture;
     if (!bgTexture.loadFromFile("./assets/background.jpg"))
@@ -63,6 +63,8 @@ int main(void)
         CardVisual newCard = CreateCard(cardTexture, centerPosition);
 
         float alpha = i / (cardQuantity - 1.f);
+        if (alpha != alpha)
+            alpha = 0.5f;
 
         newCard.desiredRotation = lerp(startAngle, endAngle, alpha);
 
@@ -98,17 +100,33 @@ int main(void)
                 view.setSize(event.size.width, event.size.height);
                 window.setView(view);
             }
+            //check if mouse is pressed and find out on which card
             if (event.type == sf::Event::MouseButtonPressed)
             {
                 for (int i = 0; i < cards.size(); i++)
                 {
-                    if (cards[i].sprite.getGlobalBounds().contains(mousePosition))
+                    sf::Transform transform;
+                    //transform.rotate(cards[i].sprite.getRotation()).scale(cards[i].sprite.getScale()).translate(cards[i].sprite.getPosition());
+                    //sf::Vector2f localMousePosition = transform.getInverse().transformPoint(mousePosition);
+                    
+                    sf::Vector2f localMousePosition = mousePosition - cards[i].sprite.getPosition();
+                    
+                    transform.rotate(-cards[i].sprite.getRotation());
+                    localMousePosition = transform.transformPoint(localMousePosition);
+
+                    sf::Vector2f scale = cards[i].sprite.getScale();
+                    localMousePosition.x /= scale.x;
+                    localMousePosition.y /= scale.y;
+                    
+                    localMousePosition += cards[i].sprite.getOrigin();
+
+                    if (cards[i].sprite.getLocalBounds().contains(localMousePosition))
                     {
                         currentCard = &cards[i];
-
                     }
                 }
             }
+            //defying mouse position
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 currentCard = nullptr;
@@ -119,8 +137,13 @@ int main(void)
                 mousePosition.y = event.mouseMove.y;
             }
         }
+        //Escape with ESC button
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+        {
+            window.close();
+        }
 
-        // simulate
+        // simulate cards in a fan
         for (int i = 0; i < cards.size(); i++)
         {
             sf::Vector2f currentPosition = cards[i].sprite.getPosition();
@@ -132,13 +155,12 @@ int main(void)
             cards[i].currentRotation = currentAngle;
         }
 
-
+        //card moves after mouse
         if (currentCard)
         {
             currentCard->desiredPosition = mousePosition;
             currentCard->desiredRotation = 0;
         }
-
 
         // draw
         window.clear();
