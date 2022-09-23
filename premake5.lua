@@ -2,17 +2,29 @@ workspace "unicorns"
 	configurations { "Debug", "Release" }
 	location "."
 	architecture "x64"
+	cppdialect "C++17"
+	defines { "NOMINMAX", "WIN32_LEAN_AND_MEAN" }
 
 project "unicorns-client"
 	kind "ConsoleApp"
 	language "C++"
 	targetdir "bin/%{cfg.buildcfg}"
 
-	files { "Client/**.*" }
+	files {
+		"Client/**.*",
+		"dependencies/imgui/*.cpp",
+		"dependencies/imgui/*.h",
+		"dependencies/imgui-sfml/*.cpp",
+		"dependencies/imgui-sfml/*.h",
+	}
 
 	filter "configurations:*"
 		defines { "SFML_STATIC" }
-		includedirs { "dependencies/SFML/include" }
+		includedirs {
+			"dependencies/SFML/include",
+			"dependencies/imgui",
+			"dependencies/imgui-sfml",
+		}
 		libdirs { "dependencies/SFML/lib" }
 		links
 		{
@@ -58,6 +70,10 @@ project "unicorns-server"
 	targetdir "bin/%{cfg.buildcfg}"
 
 	files { "Server/**.*" }
+	links {
+		"Ws2_32",
+		"winmm",
+	}
 
 	filter "configurations:*"
 		defines { "SFML_STATIC" }
@@ -68,8 +84,8 @@ project "unicorns-server"
 		defines { "DEBUG" }
 		symbols "On"
 		links
-		{	
-			-- "sfml-system-s-d",
+		{
+			"sfml-system-s-d",
 			"sfml-network-s-d"
 		}
 
@@ -78,7 +94,7 @@ project "unicorns-server"
 		optimize "On"
 		links
 		{	
-			-- "sfml-system-s",
+			"sfml-system-s",
 			"sfml-network-s"
 		}
 
@@ -86,6 +102,7 @@ project "unicorns-connect"
 	kind "StaticLib"
 	language "C++"
 	targetdir "bin/%{cfg.buildcfg}"
+	includedirs { "dependencies/SFML/include" }
 
 	files { "Connect/**.*" }
 

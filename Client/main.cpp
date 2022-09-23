@@ -1,5 +1,4 @@
 #include <SFML/Window.hpp>
-
 #include <vector>
 #include <algorithm>
 #include <random>
@@ -7,6 +6,14 @@
 #include <iostream>
 
 #include "Math.h"
+#include <SFML/Network.hpp>
+#include <thread>
+
+#include <imgui.h>
+#include <imgui-SFML.h>
+
+#include "../Connect/Unicorns.h"
+#include "LocalServer.h"
 
 struct CardVisual
 {
@@ -31,9 +38,27 @@ CardVisual CreateCard(sf::Texture& tex, sf::Vector2f& pos)
     return result;
 }
 
+void NetworkingThreadEntry(const sf::RenderWindow* window)
+{
+    sf::Packet handshake;
+    handshake << MAGIC_STRING;
+
+    sf::UdpSocket socket;
+
+    while (window->isOpen())
+    {
+		socket.send(handshake, sf::IpAddress::Broadcast, 4242);
+        sf::sleep(sf::seconds(0.5f));
+    }
+}
+
 int main(void)
 {
 	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
+
+    ImGui::SFML::Init(window);
+
+    std::thread networkingThread(&NetworkingThreadEntry, &window);
 
     sf::Texture bgTexture;
     if (!bgTexture.loadFromFile("./assets/background.jpg"))
@@ -80,16 +105,19 @@ int main(void)
 
     sf::Vector2f mousePosition;
 
-    float time = 0;
     CardVisual* currentCard = nullptr;
     // run the program as long as the window is open
+    void* serverProc = nullptr;
     while (window.isOpen())
     {
-        time += 0.016;
+        ImGui::NewFrame();
+
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
         while (window.pollEvent(event))
         {
+			ImGui::SFML::ProcessEvent(window, event);
+
             // "close requested" event: we close the window
             if (event.type == sf::Event::Closed)
                 window.close();
@@ -143,6 +171,16 @@ int main(void)
             window.close();
         }
 
+        if (!serverProc && ImGui::Button("Start server"))
+        {
+            serverProc = StartServerProcess();
+        }
+        else if (serverProc && ImGui::Button("Stop server"))
+        {
+            StopServerProcess(serverProc);
+            serverProc = nullptr;
+        }
+
         // simulate cards in a fan
         for (int i = 0; i < cards.size(); i++)
         {
@@ -162,6 +200,8 @@ int main(void)
             currentCard->desiredRotation = 0;
         }
 
+        ImGui::EndFrame();
+
         // draw
         window.clear();
         window.draw(bgSprite);
@@ -169,8 +209,18 @@ int main(void)
         {
             window.draw(cards[i].sprite);
         }
+
+		ImGui::SFML::Render(window);
         window.display();
     }
 
+	if (serverProc)
+	{
+		StopServerProcess(serverProc);
+		serverProc = nullptr;
+	}
 
+    ImGui::SFML::Shutdown(window);
+
+    networkingThread.join();
 }

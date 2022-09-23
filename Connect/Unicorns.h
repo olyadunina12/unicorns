@@ -1,9 +1,12 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <SFML/Config.hpp>
 
-struct CardID { int Value; };
-struct PlayerID { int Value; };
+#define MAGIC_STRING "UNICORNS_HANDSHAKE_MAGIC"
+    
+struct CardID { sf::Int32 Value; };
+struct PlayerID { sf::Int32 Value; };
 
 struct Card
 {
