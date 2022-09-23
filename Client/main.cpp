@@ -76,7 +76,7 @@ int main(void)
         printf("No image \n");
     }
 
-
+    bool mousePress = false;
     std::vector<CardVisual> cards;
     sf::Vector2f mousePosition;
     sf::Vector2f centerPosition(window.getSize());
@@ -84,6 +84,7 @@ int main(void)
 
     float time = 0;
     CardVisual* currentCard = nullptr;
+
     // run the program as long as the window is open
     while (window.isOpen())
     {
@@ -105,37 +106,55 @@ int main(void)
             //check if mouse is pressed and find out on which card
             if (event.type == sf::Event::MouseButtonPressed)
             {
-                for (int i = 0; i < cards.size(); i++)
-                {
-                    sf::Vector2f localMousePosition = mousePosition - cards[i].sprite.getPosition();
-                    
-                    sf::Transform transform;                    
-                    transform.rotate(-cards[i].sprite.getRotation());
-                    localMousePosition = transform.transformPoint(localMousePosition);
-
-                    sf::Vector2f scale = cards[i].sprite.getScale();
-                    localMousePosition.x /= scale.x;
-                    localMousePosition.y /= scale.y;
-                    
-                    localMousePosition += cards[i].sprite.getOrigin();
-
-                    if (cards[i].sprite.getLocalBounds().contains(localMousePosition))
-                    {
-                        currentCard = &cards[i];
-                    }
-                }
+                mousePress = true;
             }
             //if mouse is released
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 currentCard = nullptr;
                 cardPositioning(cards, centerPosition);
+                mousePress = false;
             }
             //if mouse is moved
             if (event.type == sf::Event::MouseMoved)
             {
                 mousePosition.x = event.mouseMove.x;
                 mousePosition.y = event.mouseMove.y;
+
+                if (mousePress)
+                    continue;
+
+                CardVisual* candidate = nullptr;
+                for (int i = cards.size()-1; i >= 0; i--)
+                {
+                    sf::Vector2f localMousePosition = mousePosition - cards[i].sprite.getPosition();
+
+                    sf::Transform transform;
+                    transform.rotate(-cards[i].sprite.getRotation());
+                    localMousePosition = transform.transformPoint(localMousePosition);
+
+                    sf::Vector2f scale = cards[i].sprite.getScale();
+                    localMousePosition.x /= scale.x;
+                    localMousePosition.y /= scale.y;
+
+                    localMousePosition += cards[i].sprite.getOrigin();
+
+                    if (cards[i].sprite.getLocalBounds().contains(localMousePosition))
+                    {
+                        candidate = &cards[i];
+                        break;
+                    }
+                }
+                if (currentCard != candidate)
+                {
+                    cardPositioning(cards, centerPosition);
+                    if (candidate)
+                    {
+                        candidate->desiredPosition.y -= 100;
+                        candidate->desiredRotation = 0;
+                    }
+                    currentCard = candidate;
+                }
             }
             //if key is pressed
             if (event.type == sf::Event::KeyPressed)
@@ -167,10 +186,17 @@ int main(void)
         }
 
         //card moves after mouse
-        if (currentCard)
+        if (currentCard && mousePress)
         {
             currentCard->desiredPosition = mousePosition;
             currentCard->desiredRotation = 0;
+            sf::Vector2f currentPosition = currentCard->sprite.getPosition();
+            float currentAngle = currentCard->currentRotation;
+            currentPosition = lerp(currentPosition, currentCard->desiredPosition, 0.1);
+            currentAngle = lerp(currentAngle, currentCard->desiredRotation, 0.1);
+            currentCard->sprite.setPosition(currentPosition);
+            currentCard->sprite.setRotation(currentAngle);
+            currentCard->currentRotation = currentAngle;
         }
 
         // draw
