@@ -29,61 +29,43 @@ void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerP
     float end = 3.14 - start;
     float startAngle = 30.f;
     float endAngle = -30.f;
-    if (chosenIndex == -1)
+    for (int i = 0; i < cards.size(); i++)
     {
-        for (int i = 0; i < cards.size(); i++)
-        {
-            float alpha = i / (cards.size() - 1.f);
-            if (alpha != alpha)
-                alpha = 0.5f;
+        float alpha = i / (cards.size() - 1.f);
 
-            cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
-
-            float angle = lerp(start, end, alpha);
-            float x = cos(angle);
-            float y = sin(angle) * -0.6;
-            sf::Vector2f cardPosition(x, y);
-            cardPosition *= 400.f;
-            cardPosition += centerPosition;
-            cards[i].desiredPosition = cardPosition;
+        if (alpha != alpha)
+            alpha = 0.5f;
         
-        }
-    }
-    else
-    {
-        for (int i = 0; i < chosenIndex; i++)
+        if (chosenIndex > -1)
         {
-            float alpha = (i - chosenIndex) / (cards.size() - 1.f);
-            if (alpha != alpha)
-                alpha = 0.5f;
-
-            cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
-
-            float angle = lerp(start, end, alpha);
-            float x = cos(angle);
-            float y = sin(angle) * -0.6;
-            sf::Vector2f cardPosition(x, y);
-            cardPosition *= 400.f;
-            cardPosition += centerPosition;
-            cards[i].desiredPosition = cardPosition;
+            if (i < chosenIndex)
+            {
+                alpha = lerp(alpha, 0.f, 0.5f);
+            }
+            else if (i > chosenIndex)
+            {
+                alpha = lerp(alpha, 1.f, 0.5f);
+            }
         }
-        cards[chosenIndex].desiredPosition.y -= 100;
-        cards[chosenIndex].desiredRotation = 0;
-        for (int i = chosenIndex + 1; i < cards.size(); i++)
+
+        cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
+
+        float angle = lerp(start, end, alpha);
+        float x = cos(angle);
+        float y = sin(angle) * -0.6;
+        sf::Vector2f cardPosition(x, y);
+        cardPosition *= 400.f;
+        cardPosition += centerPosition;
+        cards[i].desiredPosition = cardPosition;
+        if(chosenIndex > - 1 && i < chosenIndex)
+            cards[i].desiredPosition.x += 100;
+        else if (chosenIndex > -1 && i > chosenIndex)
+            cards[i].desiredPosition.x -= 100;
+        else if (chosenIndex > -1)
         {
-            float alpha = (i + chosenIndex) / (cards.size() - 1.f);
-            if (alpha != alpha)
-                alpha = 0.5f;
-
-            cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
-
-            float angle = lerp(start, end, alpha);
-            float x = cos(angle);
-            float y = sin(angle) * -0.6;
-            sf::Vector2f cardPosition(x, y);
-            cardPosition *= 400.f;
-            cardPosition += centerPosition;
-            cards[i].desiredPosition = cardPosition;
+            cards[i].desiredPosition.y -= 100;
+            cards[i].desiredPosition.x += lerp(0.f, 100.f, alpha);
+            cards[i].desiredRotation = 0;
         }
     }
 }
@@ -216,12 +198,13 @@ int main(void)
                 }
                 if (currentCard != candidate)
                 {
-                    cardPositioning(cards, centerPosition, -1);
+                    currentCard = candidate;
                     if (candidate)
                     {
                         cardPositioning(cards, centerPosition, chosenIndex);
                     }
-                    currentCard = candidate;
+                    else
+                        cardPositioning(cards, centerPosition, -1);
                 }
             }
             //if key is pressed
