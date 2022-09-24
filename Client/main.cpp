@@ -14,21 +14,33 @@
 
 #include "../Connect/Unicorns.h"
 #include "LocalServer.h"
+#include <mutex>
 
 struct CardVisual
 {
     sf::Sprite sprite;
     sf::Vector2f desiredPosition;
+    sf::Vector2f desiredScale;
     float desiredRotation;
     float currentRotation;
 };
 
+float gSpreadAmount = 0.195f;
+float gCircleSize = 566.f;
+float gFanAngleStart = 3.14 / 6.f;
+float gFanAngleEnd = 3.14 / 2.f;
+float gStartRotation = 10.f;
+float gEndRotation = -10.f;
+sf::Vector2f gMainCardShift(0, -165.f);
+sf::Vector2f gCommonCardScale(0.8, 0.8);
+sf::Vector2f gMainCardScale(1.1, 1.1);
+sf::Vector2f gCircleDamping(1, 0.36);
+
+
 void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerPosition, int chosenIndex)
 {
-    float start = 3.14 / 4.f;
-    float end = 3.14 - start;
-    float startAngle = 30.f;
-    float endAngle = -30.f;
+    float startAngle = lerp(gFanAngleStart, gFanAngleEnd, cards.size() / 10.f);
+    float endAngle = 3.14 - startAngle;
     for (int i = 0; i < cards.size(); i++)
     {
         float alpha = i / (cards.size() - 1.f);
@@ -40,32 +52,31 @@ void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerP
         {
             if (i < chosenIndex)
             {
-                alpha = lerp(alpha, 0.f, 0.5f);
+                alpha = lerp(alpha, -0.3f, gSpreadAmount);
             }
             else if (i > chosenIndex)
             {
-                alpha = lerp(alpha, 1.f, 0.5f);
+                alpha = lerp(alpha, 1.3f, gSpreadAmount);
             }
         }
 
-        cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
+        cards[i].desiredRotation = lerp(gStartRotation, gEndRotation, alpha);
 
-        float angle = lerp(start, end, alpha);
+        float angle = lerp(startAngle, endAngle, alpha);
         float x = cos(angle);
         float y = sin(angle) * -0.6;
         sf::Vector2f cardPosition(x, y);
-        cardPosition *= 400.f;
+        cardPosition.x *= gCircleDamping.x;
+        cardPosition.y *= gCircleDamping.y;
+        cardPosition *= gCircleSize;
         cardPosition += centerPosition;
         cards[i].desiredPosition = cardPosition;
-        if(chosenIndex > - 1 && i < chosenIndex)
-            cards[i].desiredPosition.x += 100;
-        else if (chosenIndex > -1 && i > chosenIndex)
-            cards[i].desiredPosition.x -= 100;
-        else if (chosenIndex > -1)
+        cards[i].desiredScale = gCommonCardScale;
+        if (chosenIndex > -1 && chosenIndex == i)
         {
-            cards[i].desiredPosition.y -= 100;
-            cards[i].desiredPosition.x += lerp(0.f, 100.f, alpha);
+            cards[i].desiredPosition += gMainCardShift;
             cards[i].desiredRotation = 0;
+            cards[i].desiredScale = gMainCardScale;
         }
     }
 }
@@ -80,7 +91,6 @@ CardVisual CreateCard(sf::Texture& tex, sf::Vector2f& pos)
     result.currentRotation = 0;
 
     sf::IntRect spriteSize = result.sprite.getTextureRect();
-    result.sprite.setScale(0.8, 0.8);
     result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
     return result;
 }
@@ -102,6 +112,7 @@ void NetworkingThreadEntry(const sf::RenderWindow* window)
 int main(void)
 {
 	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
+    window.setVerticalSyncEnabled(true);
 
     ImGui::SFML::Init(window);
 
@@ -128,14 +139,29 @@ int main(void)
     sf::Vector2f centerPosition(window.getSize());
     centerPosition.x /= 2;
 
-    CardVisual* currentCard = nullptr;
     int chosenIndex = -1;
 
     // run the program as long as the window is open
-    void* serverProc = nullptr;
+    ServerHandles server{};
+    std::thread serverCommsThread;
+    std::mutex  serverCommsLock;
+    std::vector<std::string> serverOutput;
     while (window.isOpen())
     {
         ImGui::NewFrame();
+
+#if defined (DEBUG)
+        ImGui::SliderFloat("Spread amount", &gSpreadAmount, 0, 1);
+        ImGui::SliderFloat2("Main card shift", &gMainCardShift.x, -300, +300);
+        ImGui::SliderFloat2("Main card scale", &gMainCardScale.x, 0, 2);
+        ImGui::SliderFloat2("Common card scale", &gCommonCardScale.x, 0, 1);
+        ImGui::SliderFloat2("gCircleDamping", &gCircleDamping.x, -1, +1);
+        ImGui::SliderFloat("Circle size", &gCircleSize, 0, 600);
+        ImGui::SliderAngle("Start angle", &gFanAngleStart);
+        ImGui::SliderAngle("End angle", &gFanAngleEnd);
+        ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
+        ImGui::SliderFloat("End rotation", &gEndRotation, -50, 50);
+#endif
 
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
@@ -161,7 +187,7 @@ int main(void)
             //if mouse is released
             if (event.type == sf::Event::MouseButtonReleased)
             {
-                currentCard = nullptr;
+                chosenIndex = -1;
                 cardPositioning(cards, centerPosition, -1);
                 mousePress = false;
             }
@@ -174,10 +200,9 @@ int main(void)
                 if (mousePress)
                     continue;
 
-                CardVisual* candidate = nullptr;
+                int candidate = -1;
                 for (int i = cards.size()-1; i >= 0; i--)
                 {
-                    chosenIndex = i;
                     sf::Vector2f localMousePosition = mousePosition - cards[i].sprite.getPosition();
 
                     sf::Transform transform;
@@ -192,19 +217,14 @@ int main(void)
 
                     if (cards[i].sprite.getLocalBounds().contains(localMousePosition))
                     {
-                        candidate = &cards[i];
+                        candidate = i;
                         break;
                     }
                 }
-                if (currentCard != candidate)
+                if (chosenIndex != candidate)
                 {
-                    currentCard = candidate;
-                    if (candidate)
-                    {
-                        cardPositioning(cards, centerPosition, chosenIndex);
-                    }
-                    else
-                        cardPositioning(cards, centerPosition, -1);
+                    chosenIndex = candidate;
+					cardPositioning(cards, centerPosition, chosenIndex);
                 }
             }
             //if key is pressed
@@ -224,40 +244,58 @@ int main(void)
             }
         }
 
-        if (!serverProc && ImGui::Button("Start server"))
+#if defined (DEBUG)
+        if (server.proc == nullptr && ImGui::Button("Start server"))
         {
-            serverProc = StartServerProcess();
+            serverOutput.clear();
+            StartServerProcess(server);
         }
-        else if (serverProc && ImGui::Button("Stop server"))
+        else if (server.proc)
         {
-            StopServerProcess(serverProc);
-            serverProc = nullptr;
+            if (ImGui::Button("Stop server"))
+            {
+				StopServerProcess(server);
+            }
+            std::string out;
+            if (ReadFromServer(server, out))
+            {
+                serverOutput.push_back(out);
+            }
+
+            for (auto& It : serverOutput)
+            {
+                ImGui::Text("%s", It.c_str());
+            }
         }
+#endif
 
         // simulate cards in a fan
         for (int i = 0; i < cards.size(); i++)
         {
             sf::Vector2f currentPosition = cards[i].sprite.getPosition();
+            sf::Vector2f currentScale = cards[i].sprite.getScale();
             float currentAngle = cards[i].currentRotation;
-            currentPosition = lerp(currentPosition, cards[i].desiredPosition, 0.005);
-            currentAngle = lerp(currentAngle, cards[i].desiredRotation, 0.005);
+            currentPosition = lerp(currentPosition, cards[i].desiredPosition, 0.05);
+            currentScale = lerp(currentScale, cards[i].desiredScale, 0.3);
+            currentAngle = lerp(currentAngle, cards[i].desiredRotation, 0.3);
             cards[i].sprite.setPosition(currentPosition);
+            cards[i].sprite.setScale(currentScale);
             cards[i].sprite.setRotation(currentAngle);
             cards[i].currentRotation = currentAngle;
         }
 
         //card moves after mouse
-        if (currentCard && mousePress)
+        if (chosenIndex != -1 && mousePress)
         {
-            currentCard->desiredPosition = mousePosition;
-            currentCard->desiredRotation = 0;
-            sf::Vector2f currentPosition = currentCard->sprite.getPosition();
-            float currentAngle = currentCard->currentRotation;
-            currentPosition = lerp(currentPosition, currentCard->desiredPosition, 0.1);
-            currentAngle = lerp(currentAngle, currentCard->desiredRotation, 0.1);
-            currentCard->sprite.setPosition(currentPosition);
-            currentCard->sprite.setRotation(currentAngle);
-            currentCard->currentRotation = currentAngle;
+            cards[chosenIndex].desiredPosition = mousePosition;
+            cards[chosenIndex].desiredRotation = 0;
+            sf::Vector2f currentPosition = cards[chosenIndex].sprite.getPosition();
+            float currentAngle = cards[chosenIndex].currentRotation;
+            currentPosition = lerp(currentPosition, cards[chosenIndex].desiredPosition, 0.1);
+            currentAngle = lerp(currentAngle, cards[chosenIndex].desiredRotation, 0.2);
+            cards[chosenIndex].sprite.setPosition(currentPosition);
+            cards[chosenIndex].sprite.setRotation(currentAngle);
+            cards[chosenIndex].currentRotation = currentAngle;
         }
 
         ImGui::EndFrame();
@@ -270,15 +308,14 @@ int main(void)
             window.draw(cards[i].sprite);
         }
 
+        if (chosenIndex != -1)
+			window.draw(cards[chosenIndex].sprite);
+
 		ImGui::SFML::Render(window);
         window.display();
     }
 
-	if (serverProc)
-	{
-		StopServerProcess(serverProc);
-		serverProc = nullptr;
-	}
+	if (server.proc) StopServerProcess(server);
 
     ImGui::SFML::Shutdown(window);
 

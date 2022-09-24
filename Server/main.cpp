@@ -22,7 +22,7 @@ void listenForClients()
 		sf::Packet handshake;
 		sf::Socket::Status status = socket.receive(handshake, remoteAddress, port);
 
-		if (status == sf::Socket::Status::NotReady)
+		if (status != sf::Socket::Status::Done)
 		{
 			sf::sleep(sf::seconds(1.f));
 			continue;

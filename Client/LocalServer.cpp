@@ -2,53 +2,102 @@
 #include <iostream>
 #include <cassert>
 
-HANDLE gReadPipe, gWritePipe;
-HANDLE gProc;
-
-void* StartServerProcess()
+bool StartServerProcess(ServerHandles& outHandles)
 {
 	DWORD flags = 0;
 #if 0
 	flags = CREATE_NO_WINDOW;
 #endif
 
+	CreatePipe(&outHandles.readPipeToServer, &outHandles.writePipeToServer, nullptr, 0);
+	SetHandleInformation(outHandles.readPipeToServer, HANDLE_FLAG_INHERIT, 0);
+
+	CreatePipe(&outHandles.readPipeFromServer, &outHandles.writePipeFromServer, nullptr, 0);
+	SetHandleInformation(outHandles.readPipeFromServer, HANDLE_FLAG_INHERIT, 0);
+
 	STARTUPINFOA startupInfo{};
 
-	CreatePipe(&gReadPipe, &gWritePipe, nullptr, 0);
-	SetHandleInformation(gReadPipe, HANDLE_FLAG_INHERIT, 0);
-
-	startupInfo.hStdInput = gReadPipe;
+	startupInfo.hStdInput  = outHandles.readPipeToServer;
+	startupInfo.hStdOutput = outHandles.writePipeFromServer;
+	startupInfo.hStdError  = outHandles.writePipeFromServer;
 	startupInfo.dwFlags = STARTF_USESTDHANDLES;
 	startupInfo.cb = sizeof(startupInfo);
 
 	PROCESS_INFORMATION processInfo{};
 
+	char* path = "./bin/Debug/unicorns-server.exe";
+
+#if 0
+	path = "./bin/Release/unicorns-server.exe";
+#endif
+
 	bool result = CreateProcessA(
-		"./bin/Debug/unicorns-server.exe",
+		path,
 		"", NULL, NULL, true,
 		flags, nullptr, ".",
 		&startupInfo, &processInfo
 	);
-	gProc = processInfo.hProcess;
+	outHandles.proc   = processInfo.hProcess;
+	outHandles.thread = processInfo.hThread;
 	if (result)
 	{
 		std::cout << "Sucessfully started server. ID:"
 			<< processInfo.dwProcessId << "\n";
+		return true;
 	}
-	return gProc;
+
+	outHandles.commsThread = std::thread([&outHandles]() {
+		char buf[64];
+		DWORD read;
+
+		while (ReadFile(outHandles.readPipeFromServer, buf, sizeof(buf), &read, NULL))
+		{
+			if (read > 0)
+			{
+				outHandles.commsLock.lock();
+				outHandles.commsText.emplace_back(buf, read);
+				outHandles.commsLock.unlock();
+			}
+		}
+	});
+
+	return false;
 }
 
-void  StopServerProcess(void* Proc)
+void StopServerProcess(ServerHandles& handles)
 {
-	assert(Proc == gProc);
+	WriteToServer(handles, "quit");
 
-	char* str = "quit";
-	DWORD written = 0;
-	WriteFile(gWritePipe, str, 5, &written, NULL);
-	assert(written == 5);
+	CloseHandle(handles.writePipeToServer);
+	CloseHandle(handles.readPipeToServer);
 
-	CloseHandle(gWritePipe);
-	CloseHandle(gReadPipe);
+	CloseHandle(handles.writePipeFromServer);
+	CloseHandle(handles.readPipeFromServer);
 
-	TerminateProcess(Proc, 0);
+	TerminateProcess(handles.proc, 0);
+
+	handles.commsThread.join();
 }
+
+bool WriteToServer(ServerHandles& handles, std::string_view inText)
+{
+	DWORD written = 0;
+	WriteFile(handles.writePipeToServer, inText.data(), inText.size() + 1, &written, NULL);
+	assert(written == inText.size() + 1);
+	return written > 0;
+}
+
+bool ReadFromServer(ServerHandles& handles, std::string& outText)
+{
+	if (!handles.commsText.empty())
+	{
+		handles.commsLock.lock();
+		outText = std::move(handles.commsText.front());
+		handles.commsText.erase(handles.commsText.begin());
+		handles.commsLock.unlock();
+		return true;
+	}
+	return false;
+}
+
+
