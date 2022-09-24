@@ -27,14 +27,14 @@ struct CardVisual
 
 float gSpreadAmount = 0.195f;
 float gCircleSize = 566.f;
-float gFanAngleStart = 3.14 / 6.f;
-float gFanAngleEnd = 3.14 / 2.f;
+float gFanAngleStart = RADIANS(90);
+float gFanAngleEnd = RADIANS(40);
 float gStartRotation = 10.f;
 float gEndRotation = -10.f;
 sf::Vector2f gMainCardShift(0, -165.f);
 sf::Vector2f gCommonCardScale(0.8, 0.8);
 sf::Vector2f gMainCardScale(1.1, 1.1);
-sf::Vector2f gCircleDamping(1, 0.36);
+sf::Vector2f gCircleDamping(1, 0.7);
 
 
 void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerPosition, int chosenIndex)
