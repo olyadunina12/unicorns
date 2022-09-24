@@ -23,29 +23,68 @@ struct CardVisual
     float currentRotation;
 };
 
-void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerPosition)
+void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerPosition, int chosenIndex)
 {
     float start = 3.14 / 4.f;
     float end = 3.14 - start;
     float startAngle = 30.f;
     float endAngle = -30.f;
-
-    for (int i = 0; i < cards.size(); i++)
+    if (chosenIndex == -1)
     {
-        float alpha = i / (cards.size() - 1.f);
-        if (alpha != alpha)
-            alpha = 0.5f;
+        for (int i = 0; i < cards.size(); i++)
+        {
+            float alpha = i / (cards.size() - 1.f);
+            if (alpha != alpha)
+                alpha = 0.5f;
 
-        cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
+            cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
 
-        float angle = lerp(start, end, alpha);
-        float x = cos(angle);
-        float y = sin(angle) * -0.6;
-        sf::Vector2f cardPosition(x, y);
-        cardPosition *= 400.f;
-        cardPosition += centerPosition;
-        cards[i].desiredPosition = cardPosition;
+            float angle = lerp(start, end, alpha);
+            float x = cos(angle);
+            float y = sin(angle) * -0.6;
+            sf::Vector2f cardPosition(x, y);
+            cardPosition *= 400.f;
+            cardPosition += centerPosition;
+            cards[i].desiredPosition = cardPosition;
         
+        }
+    }
+    else
+    {
+        for (int i = 0; i < chosenIndex; i++)
+        {
+            float alpha = (i - chosenIndex) / (cards.size() - 1.f);
+            if (alpha != alpha)
+                alpha = 0.5f;
+
+            cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
+
+            float angle = lerp(start, end, alpha);
+            float x = cos(angle);
+            float y = sin(angle) * -0.6;
+            sf::Vector2f cardPosition(x, y);
+            cardPosition *= 400.f;
+            cardPosition += centerPosition;
+            cards[i].desiredPosition = cardPosition;
+        }
+        cards[chosenIndex].desiredPosition.y -= 100;
+        cards[chosenIndex].desiredRotation = 0;
+        for (int i = chosenIndex + 1; i < cards.size(); i++)
+        {
+            float alpha = (i + chosenIndex) / (cards.size() - 1.f);
+            if (alpha != alpha)
+                alpha = 0.5f;
+
+            cards[i].desiredRotation = lerp(startAngle, endAngle, alpha);
+
+            float angle = lerp(start, end, alpha);
+            float x = cos(angle);
+            float y = sin(angle) * -0.6;
+            sf::Vector2f cardPosition(x, y);
+            cardPosition *= 400.f;
+            cardPosition += centerPosition;
+            cards[i].desiredPosition = cardPosition;
+        }
     }
 }
 
@@ -108,6 +147,7 @@ int main(void)
     centerPosition.x /= 2;
 
     CardVisual* currentCard = nullptr;
+    int chosenIndex = -1;
 
     // run the program as long as the window is open
     void* serverProc = nullptr;
@@ -140,7 +180,7 @@ int main(void)
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 currentCard = nullptr;
-                cardPositioning(cards, centerPosition);
+                cardPositioning(cards, centerPosition, -1);
                 mousePress = false;
             }
             //if mouse is moved
@@ -155,6 +195,7 @@ int main(void)
                 CardVisual* candidate = nullptr;
                 for (int i = cards.size()-1; i >= 0; i--)
                 {
+                    chosenIndex = i;
                     sf::Vector2f localMousePosition = mousePosition - cards[i].sprite.getPosition();
 
                     sf::Transform transform;
@@ -175,11 +216,10 @@ int main(void)
                 }
                 if (currentCard != candidate)
                 {
-                    cardPositioning(cards, centerPosition);
+                    cardPositioning(cards, centerPosition, -1);
                     if (candidate)
                     {
-                        candidate->desiredPosition.y -= 100;
-                        candidate->desiredRotation = 0;
+                        cardPositioning(cards, centerPosition, chosenIndex);
                     }
                     currentCard = candidate;
                 }
@@ -195,7 +235,7 @@ int main(void)
                 {
                     CardVisual newCard = CreateCard(cardTexture, centerPosition);
                     cards.push_back(newCard);
-                    cardPositioning(cards, centerPosition);
+                    cardPositioning(cards, centerPosition, -1);
                 }
 
             }
