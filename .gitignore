@@ -4,6 +4,8 @@ obj/*
 *.sln
 *.vcxproj
 *.vcxproj.user
+*.vcxproj.filters
 *.exe
 *.swp
+imgui.ini
 dependencies/*
