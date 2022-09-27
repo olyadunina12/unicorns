@@ -31,6 +31,11 @@ float gFanAngleStart = RADIANS(90);
 float gFanAngleEnd = RADIANS(40);
 float gStartRotation = 10.f;
 float gEndRotation = -10.f;
+float gShadowAlpha = 80;
+float gShadowOutlineAlpha = 75;
+float gShadowScale = 1;
+float gShadowThickness = 7;
+sf::Vector2f gShadowOffset(-18,25);
 sf::Vector2f gMainCardShift(0, -165.f);
 sf::Vector2f gCommonCardScale(0.8, 0.8);
 sf::Vector2f gMainCardScale(1.1, 1.1);
@@ -161,6 +166,13 @@ int main(void)
         ImGui::SliderAngle("End angle", &gFanAngleEnd);
         ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
         ImGui::SliderFloat("End rotation", &gEndRotation, -50, 50);
+
+        ImGui::TextUnformatted("Shadow settings.");
+        ImGui::SliderFloat2("Shadow offset", &gShadowOffset.x, -50, 50);
+        ImGui::SliderFloat("Shadow Alpha", &gShadowAlpha, 0,255);
+        ImGui::SliderFloat("Shadow Outline Alpha", &gShadowOutlineAlpha, 0, 255);
+        ImGui::SliderFloat("Shadow Scale", &gShadowScale, 0, 50);
+        ImGui::SliderFloat("Shadow Thickness", &gShadowThickness, 0, 50);
 #endif
 
         // check all the window's events that were triggered since the last iteration of the loop
@@ -305,11 +317,45 @@ int main(void)
         window.draw(bgSprite);
         for (int i = 0; i < cards.size(); i++)
         {
+            sf::IntRect texRect = cards[i].sprite.getTextureRect();
+            sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
+            cardShadow.setFillColor(sf::Color(0,0,0, gShadowAlpha));
+            cardShadow.setPosition(cards[i].sprite.getPosition()+gShadowOffset);
+            cardShadow.setOrigin(cards[i].sprite.getOrigin());
+            cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
+            cardShadow.setScale(cards[i].sprite.getScale() * gShadowScale);
+            cardShadow.setOutlineThickness(gShadowThickness);
+            cardShadow.setRotation(cards[i].sprite.getRotation());
+            window.draw(cardShadow);
+
             window.draw(cards[i].sprite);
         }
-
+        
         if (chosenIndex != -1)
+        {
+            int i = chosenIndex;
+            sf::IntRect texRect = cards[i].sprite.getTextureRect();
+            sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
+            cardShadow.setFillColor(sf::Color(0, 0, 0, gShadowAlpha));
+            cardShadow.setPosition(cards[i].sprite.getPosition() + gShadowOffset);
+            cardShadow.setOrigin(cards[i].sprite.getOrigin());
+            cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
+            cardShadow.setScale(cards[i].sprite.getScale()* gShadowScale);
+            cardShadow.setOutlineThickness(gShadowThickness);
+            cardShadow.setRotation(cards[i].sprite.getRotation());
+            window.draw(cardShadow);
+
+            sf::RectangleShape cardHighlight(sf::Vector2f(texRect.width, texRect.height));
+            cardHighlight.setFillColor(sf::Color::Cyan);
+            cardHighlight.setPosition(cards[chosenIndex].sprite.getPosition());
+            cardHighlight.setOrigin(cards[chosenIndex].sprite.getOrigin());
+            cardHighlight.setOutlineColor(sf::Color(50, 150, 255, 200));
+            cardHighlight.setScale(cards[chosenIndex].sprite.getScale() * 1.05f);
+            cardHighlight.setOutlineThickness(5);
+            window.draw(cardHighlight);
+
 			window.draw(cards[chosenIndex].sprite);
+        }
 
 		ImGui::SFML::Render(window);
         window.display();
