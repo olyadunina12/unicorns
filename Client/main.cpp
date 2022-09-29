@@ -165,7 +165,7 @@ int main(void)
     bgSprite.setScale(2, 2);
 
     sf::Texture cardTexture;
-    if (!cardTexture.loadFromFile("./assets/base/Alluring Narwhal/img.png"))
+    if (!cardTexture.loadFromFile("./assets/base/Baby Unicorn (Green)/img.jpg"))
     {
         printf("No image \n");
     }
@@ -195,6 +195,12 @@ int main(void)
     CardVisual newCard = CreateCard(cardTexture, cardStable1);
     stable1.push_back(newCard);
     stablePositioning(stable1, cardStable1, -1);
+    CardVisual newCard2 = CreateCard(cardTexture, cardStable2);
+    stable2.push_back(newCard);
+    stablePositioning(stable2, cardStable2, -1);
+    CardVisual newCard3 = CreateCard(cardTexture, cardStable3);
+    stable3.push_back(newCard);
+    stablePositioning(stable3, cardStable3, -1);
 
     int chosenIndex = -1;
 
