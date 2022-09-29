@@ -28,7 +28,7 @@ struct CardVisual
 float gSpreadAmount = 0.195f;
 float gCircleSize = 566.f;
 float gFanAngleStart = RADIANS(90);
-float gFanAngleEnd = RADIANS(40);
+float gFanAngleEnd = RADIANS(46);
 float gStartRotation = 10.f;
 float gEndRotation = -10.f;
 float gShadowAlpha = 80;
@@ -41,8 +41,7 @@ sf::Vector2f gCommonCardScale(0.8, 0.8);
 sf::Vector2f gMainCardScale(1.1, 1.1);
 sf::Vector2f gCircleDamping(1, 0.7);
 
-
-void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerPosition, int chosenIndex)
+void HandCardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& cardHandPosition, int chosenIndex)
 {
     float startAngle = lerp(gFanAngleStart, gFanAngleEnd, cards.size() / 10.f);
     float endAngle = 3.14 - startAngle;
@@ -74,7 +73,7 @@ void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerP
         cardPosition.x *= gCircleDamping.x;
         cardPosition.y *= gCircleDamping.y;
         cardPosition *= gCircleSize;
-        cardPosition += centerPosition;
+        cardPosition += cardHandPosition;
         cards[i].desiredPosition = cardPosition;
         cards[i].desiredScale = gCommonCardScale;
         if (chosenIndex > -1 && chosenIndex == i)
@@ -83,6 +82,39 @@ void cardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& centerP
             cards[i].desiredRotation = 0;
             cards[i].desiredScale = gMainCardScale;
         }
+    }
+}
+void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& cardStable, int chosenIndex)
+{
+    for (int i = stable.size()-1; i >= 0; i--)
+    {
+        sf::Vector2f cardPosition;
+        cardPosition = cardStable;
+        cardPosition.y -= (100 * i);
+        stable[i].desiredPosition = cardPosition;
+        stable[i].desiredScale = gCommonCardScale;
+        if (chosenIndex > -1 && chosenIndex == i)
+        {
+            stable[i].desiredPosition += gMainCardShift;
+            stable[i].desiredRotation = 0;
+            stable[i].desiredScale = gMainCardScale;
+        }
+    }
+}
+void simulation(std::vector<CardVisual>& source, int j)
+{
+    for (int i = 0; i < source.size(); i++)
+    {
+        sf::Vector2f currentPosition = source[i].sprite.getPosition();
+        sf::Vector2f currentScale = source[i].sprite.getScale();
+        currentPosition = lerp(currentPosition, source[i].desiredPosition, 0.05);
+        currentScale = lerp(currentScale, source[i].desiredScale, 0.3);
+        source[i].sprite.setPosition(currentPosition);
+        source[i].sprite.setScale(currentScale);
+        float currentAngle = source[i].currentRotation;
+        currentAngle = lerp(currentAngle, source[i].desiredRotation, 0.3);
+        source[i].sprite.setRotation(currentAngle);
+        source[i].currentRotation = currentAngle;
     }
 }
 
@@ -140,9 +172,29 @@ int main(void)
 
     bool mousePress = false;
     std::vector<CardVisual> cards;
+    std::vector<CardVisual> stable1;
+    std::vector<CardVisual> stable2;
+    std::vector<CardVisual> stable3;
     sf::Vector2f mousePosition;
     sf::Vector2f centerPosition(window.getSize());
+    sf::Vector2f cardHandPosition = centerPosition;
+    
+    sf::Vector2f cardStable1 = centerPosition;
+    sf::Vector2f cardStable2 = centerPosition;
+    sf::Vector2f cardStable3 = centerPosition;
+    cardHandPosition.x /= 1.4;
+    cardStable1.x /= 13;
+    cardStable1.y /= 1.3;
+    cardStable2.x /= 4.6;
+    cardStable2.y /= 1.3;
+    cardStable3.x /= 2.8;
+    cardStable3.y /= 1.3;
     centerPosition.x /= 2;
+    
+    //create a chosen baby-unicorn
+    CardVisual newCard = CreateCard(cardTexture, cardStable1);
+    stable1.push_back(newCard);
+    stablePositioning(stable1, cardStable1, -1);
 
     int chosenIndex = -1;
 
@@ -166,6 +218,7 @@ int main(void)
         ImGui::SliderAngle("End angle", &gFanAngleEnd);
         ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
         ImGui::SliderFloat("End rotation", &gEndRotation, -50, 50);
+        ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
 
         ImGui::TextUnformatted("Shadow settings.");
         ImGui::SliderFloat2("Shadow offset", &gShadowOffset.x, -50, 50);
@@ -174,7 +227,7 @@ int main(void)
         ImGui::SliderFloat("Shadow Scale", &gShadowScale, 0, 50);
         ImGui::SliderFloat("Shadow Thickness", &gShadowThickness, 0, 50);
 #endif
-
+        
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
         while (window.pollEvent(event))
@@ -191,6 +244,8 @@ int main(void)
                 view.setSize(event.size.width, event.size.height);
                 window.setView(view);
             }
+
+ 
             //check if mouse is pressed and find out on which card
             if (event.type == sf::Event::MouseButtonPressed)
             {
@@ -200,7 +255,7 @@ int main(void)
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 chosenIndex = -1;
-                cardPositioning(cards, centerPosition, -1);
+                HandCardPositioning(cards, cardHandPosition, -1);
                 mousePress = false;
             }
             //if mouse is moved
@@ -236,7 +291,7 @@ int main(void)
                 if (chosenIndex != candidate)
                 {
                     chosenIndex = candidate;
-					cardPositioning(cards, centerPosition, chosenIndex);
+                    HandCardPositioning(cards, cardHandPosition, chosenIndex);
                 }
             }
             //if key is pressed
@@ -248,9 +303,9 @@ int main(void)
                 //cards appearing when space button is pressed
                 else if (event.key.code == sf::Keyboard::Space)
                 {
-                    CardVisual newCard = CreateCard(cardTexture, centerPosition);
+                    CardVisual newCard = CreateCard(cardTexture, cardHandPosition);
                     cards.push_back(newCard);
-                    cardPositioning(cards, centerPosition, -1);
+                    HandCardPositioning(cards, cardHandPosition, -1);
                 }
 
             }
@@ -281,21 +336,12 @@ int main(void)
         }
 #endif
 
-        // simulate cards in a fan
-        for (int i = 0; i < cards.size(); i++)
-        {
-            sf::Vector2f currentPosition = cards[i].sprite.getPosition();
-            sf::Vector2f currentScale = cards[i].sprite.getScale();
-            float currentAngle = cards[i].currentRotation;
-            currentPosition = lerp(currentPosition, cards[i].desiredPosition, 0.05);
-            currentScale = lerp(currentScale, cards[i].desiredScale, 0.3);
-            currentAngle = lerp(currentAngle, cards[i].desiredRotation, 0.3);
-            cards[i].sprite.setPosition(currentPosition);
-            cards[i].sprite.setScale(currentScale);
-            cards[i].sprite.setRotation(currentAngle);
-            cards[i].currentRotation = currentAngle;
-        }
-
+        // cards positioning simulation
+        simulation(cards, 0);
+        simulation(stable1, 1);
+        simulation(stable2, 2);
+        simulation(stable3, 3);
+        
         //card moves after mouse
         if (chosenIndex != -1 && mousePress)
         {
@@ -315,8 +361,10 @@ int main(void)
         // draw
         window.clear();
         window.draw(bgSprite);
+        //window.draw(card);
         for (int i = 0; i < cards.size(); i++)
         {
+            //create shadows for cards
             sf::IntRect texRect = cards[i].sprite.getTextureRect();
             sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
             cardShadow.setFillColor(sf::Color(0,0,0, gShadowAlpha));
@@ -330,19 +378,32 @@ int main(void)
 
             window.draw(cards[i].sprite);
         }
+        //draw stables
+        for (int i = 0; i < stable1.size(); i++)
+        {
+            window.draw(stable1[i].sprite);
+        }
+        for (int i = 0; i < stable2.size(); i++)
+        {
+            window.draw(stable2[i].sprite);
+        }
+        for (int i = 0; i < stable3.size(); i++)
+        {
+            window.draw(stable3[i].sprite);
+        }
         
         if (chosenIndex != -1)
         {
-            int i = chosenIndex;
-            sf::IntRect texRect = cards[i].sprite.getTextureRect();
+            //if a card is chosen create it's shadow, highlight and draw it again separately
+            sf::IntRect texRect = cards[chosenIndex].sprite.getTextureRect();
             sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
             cardShadow.setFillColor(sf::Color(0, 0, 0, gShadowAlpha));
-            cardShadow.setPosition(cards[i].sprite.getPosition() + gShadowOffset);
-            cardShadow.setOrigin(cards[i].sprite.getOrigin());
+            cardShadow.setPosition(cards[chosenIndex].sprite.getPosition() + gShadowOffset);
+            cardShadow.setOrigin(cards[chosenIndex].sprite.getOrigin());
             cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
-            cardShadow.setScale(cards[i].sprite.getScale()* gShadowScale);
+            cardShadow.setScale(cards[chosenIndex].sprite.getScale()* gShadowScale);
             cardShadow.setOutlineThickness(gShadowThickness);
-            cardShadow.setRotation(cards[i].sprite.getRotation());
+            cardShadow.setRotation(cards[chosenIndex].sprite.getRotation());
             window.draw(cardShadow);
 
             sf::RectangleShape cardHighlight(sf::Vector2f(texRect.width, texRect.height));
