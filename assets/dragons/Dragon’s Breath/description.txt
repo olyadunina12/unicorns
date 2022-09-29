@@ -1,3 +1,0 @@
-Type: Magic
-Copies: 1
-Description: DESTROY a Unicorn

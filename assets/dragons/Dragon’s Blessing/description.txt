@@ -1,3 +1,0 @@
-Type: Upgrade
-Copies: 1
-Description: As long as this card is in your Stable, Downgrades in your Stable have no effect.
