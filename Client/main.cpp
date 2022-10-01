@@ -174,17 +174,40 @@ CardVisual CreateCard(sf::Texture& tex, sf::Vector2f& pos)
     return result;
 }
 
-void NetworkingThreadEntry(const sf::RenderWindow* window)
+sf::TcpSocket serverConnection;
+
+void ConnectToServerEntry()
 {
     sf::Packet handshake;
-    handshake << MAGIC_STRING;
+    handshake << PacketType::Handshake;
+    handshake << HANDSHAKE_MAGIC_STRING;
 
     sf::UdpSocket socket;
+    socket.setBlocking(false);
 
-    while (window->isOpen())
+	sf::TcpListener listener;
+	listener.setBlocking(false);
+
+    for (int i = 0; i < 100; ++i)
     {
+        socket.bind(4242);
 		socket.send(handshake, sf::IpAddress::Broadcast, 4242);
         sf::sleep(sf::seconds(0.5f));
+
+        sf::Socket::Status status = listener.listen(4243);
+        for (int i = 0; i < 100; ++i)
+        {
+			sf::sleep(sf::seconds(0.1f));
+            if (status == sf::Socket::Done
+                && (status = listener.accept(serverConnection)) == sf::Socket::Done)
+            {
+                break;
+            }
+        }
+        if (status == sf::Socket::Done)
+        {
+            break;
+        }
     }
 }
 
@@ -195,16 +218,20 @@ int main(void)
 
     ImGui::SFML::Init(window);
 
-    std::thread networkingThread(&NetworkingThreadEntry, &window);
+    std::thread networkingThread;
 
     sf::Texture bgTexture;
     if (!bgTexture.loadFromFile("./assets/background.jpg"))
     {
         printf("No image \n");
     }
+    bgTexture.setRepeated(true);
+    bgTexture.setSmooth(true);
+
     sf::Sprite bgSprite;
     bgSprite.setTexture(bgTexture);
-    bgSprite.setScale(2, 2);
+    bgSprite.setScale(1.4, 1.4);
+    bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
 
     sf::Texture cardTexture;
     if (!cardTexture.loadFromFile("./assets/base/Baby Unicorn (Green)/img.jpg"))
@@ -390,20 +417,27 @@ int main(void)
         }
         else if (server.proc)
         {
-            if (ImGui::Button("Stop server"))
-            {
-				StopServerProcess(server);
-            }
             std::string out;
             if (ReadFromServer(server, out))
             {
                 serverOutput.push_back(out);
             }
 
+            ImGui::Begin("Server");
+            if (ImGui::Button("Stop server"))
+            {
+				StopServerProcess(server);
+            }
             for (auto& It : serverOutput)
             {
-                ImGui::Text("%s", It.c_str());
+				ImGui::TextUnformatted(It.c_str(), It.c_str() + It.size());
             }
+            ImGui::End();
+        }
+
+        if (!networkingThread.joinable() && ImGui::Button("Connect to server"))
+        {
+			networkingThread = std::thread(&ConnectToServerEntry);
         }
 #endif
 
@@ -498,9 +532,8 @@ int main(void)
         window.display();
     }
 
-	if (server.proc) StopServerProcess(server);
-
     ImGui::SFML::Shutdown(window);
 
-    networkingThread.join();
+	if (server.proc) StopServerProcess(server);
+    if (networkingThread.joinable()) networkingThread.join();
 }
