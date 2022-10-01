@@ -25,6 +25,24 @@ struct CardVisual
     float currentRotation;
 };
 
+enum Pile : uint8_t { unicorns, bonuses, penalties, hand, count };
+
+struct CardSelection
+{
+    int id;
+    Pile pile;
+
+    void reset()
+    {
+        id = -1;
+    }
+
+    bool isValid()
+    {
+        return id != -1;
+    }
+};
+
 float gSpreadAmount = 0.195f;
 float gCircleSize = 566.f;
 float gFanAngleStart = RADIANS(90);
@@ -101,7 +119,31 @@ void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& card
         }
     }
 }
-void simulation(std::vector<CardVisual>& source, int j)
+
+int cardChosen(std::vector<CardVisual>& source, int candidate, sf::Vector2f mousePosition)
+{
+    for (int i = source.size() - 1; i >= 0; i--)
+    {
+        sf::Vector2f localMousePosition = mousePosition - source[i].sprite.getPosition();
+
+        sf::Transform transform;
+        transform.rotate(-source[i].sprite.getRotation());
+        localMousePosition = transform.transformPoint(localMousePosition);
+
+        sf::Vector2f scale = source[i].sprite.getScale();
+        localMousePosition.x /= scale.x;
+        localMousePosition.y /= scale.y;
+
+        localMousePosition += source[i].sprite.getOrigin();
+
+        if (source[i].sprite.getLocalBounds().contains(localMousePosition))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+void simulation(std::vector<CardVisual>& source)
 {
     for (int i = 0; i < source.size(); i++)
     {
@@ -169,6 +211,7 @@ int main(void)
     {
         printf("No image \n");
     }
+    cardTexture.setSmooth(true);
 
     bool mousePress = false;
     std::vector<CardVisual> cards;
@@ -202,7 +245,12 @@ int main(void)
     stable3.push_back(newCard);
     stablePositioning(stable3, cardStable3, -1);
 
-    int chosenIndex = -1;
+    //int chosenIndex = -1;
+    //Pile chosenPile = unicorns;
+    CardSelection hoveredCard;
+
+    std::vector<CardVisual>* piles[] = { &stable1, &stable2, &stable3, &cards };
+    sf::Vector2f* stablePositions[] = { &cardStable1, &cardStable2, &cardStable3 };
 
     // run the program as long as the window is open
     ServerHandles server{};
@@ -260,8 +308,14 @@ int main(void)
             //if mouse is released
             if (event.type == sf::Event::MouseButtonReleased)
             {
-                chosenIndex = -1;
+                hoveredCard.reset();
+
                 HandCardPositioning(cards, cardHandPosition, -1);
+                for (int i = 0; i < (Pile::count - 1); i++)
+                {
+                    stablePositioning(*piles[i], *stablePositions[i], -1);
+                }
+                
                 mousePress = false;
             }
             //if mouse is moved
@@ -274,30 +328,41 @@ int main(void)
                     continue;
 
                 int candidate = -1;
-                for (int i = cards.size()-1; i >= 0; i--)
+                Pile candidatePile = Pile::unicorns;
+
+
+                for (int i = 0; i < Pile::count; i++)
                 {
-                    sf::Vector2f localMousePosition = mousePosition - cards[i].sprite.getPosition();
-
-                    sf::Transform transform;
-                    transform.rotate(-cards[i].sprite.getRotation());
-                    localMousePosition = transform.transformPoint(localMousePosition);
-
-                    sf::Vector2f scale = cards[i].sprite.getScale();
-                    localMousePosition.x /= scale.x;
-                    localMousePosition.y /= scale.y;
-
-                    localMousePosition += cards[i].sprite.getOrigin();
-
-                    if (cards[i].sprite.getLocalBounds().contains(localMousePosition))
+                    candidate = cardChosen(*piles[i], candidate, mousePosition);
+                    if (candidate != -1)
                     {
-                        candidate = i;
+                        candidatePile = (Pile)i;
                         break;
                     }
                 }
-                if (chosenIndex != candidate)
+                
+                //if (chosenIndex != candidate)
                 {
-                    chosenIndex = candidate;
-                    HandCardPositioning(cards, cardHandPosition, chosenIndex);
+                    hoveredCard.id = candidate;
+                    hoveredCard.pile = candidatePile;
+
+                    HandCardPositioning(cards, cardHandPosition, -1);
+                    for (int i = 0; i < (Pile::count - 1); i++)
+                    {
+                        stablePositioning(*piles[i], *stablePositions[i], -1);
+                    }
+
+                    if (hoveredCard.isValid())
+                    {
+                        if (candidatePile == hand)
+                        {
+                            HandCardPositioning(cards, cardHandPosition, hoveredCard.id);
+                        }
+                        else
+                        {
+                            stablePositioning(*piles[candidatePile], *stablePositions[candidatePile], hoveredCard.id);
+                        }
+                    }
                 }
             }
             //if key is pressed
@@ -343,23 +408,26 @@ int main(void)
 #endif
 
         // cards positioning simulation
-        simulation(cards, 0);
-        simulation(stable1, 1);
-        simulation(stable2, 2);
-        simulation(stable3, 3);
+        for (int i = 0; i < (Pile::count); i++)
+        {
+            simulation(*piles[i]);
+        }
+
         
         //card moves after mouse
-        if (chosenIndex != -1 && mousePress)
+        if (hoveredCard.isValid() && mousePress)
         {
-            cards[chosenIndex].desiredPosition = mousePosition;
-            cards[chosenIndex].desiredRotation = 0;
-            sf::Vector2f currentPosition = cards[chosenIndex].sprite.getPosition();
-            float currentAngle = cards[chosenIndex].currentRotation;
-            currentPosition = lerp(currentPosition, cards[chosenIndex].desiredPosition, 0.1);
-            currentAngle = lerp(currentAngle, cards[chosenIndex].desiredRotation, 0.2);
-            cards[chosenIndex].sprite.setPosition(currentPosition);
-            cards[chosenIndex].sprite.setRotation(currentAngle);
-            cards[chosenIndex].currentRotation = currentAngle;
+            CardVisual& chosenCard = piles[hoveredCard.pile]->at(hoveredCard.id);
+
+            chosenCard.desiredPosition = mousePosition;
+            chosenCard.desiredRotation = 0;
+            sf::Vector2f currentPosition = chosenCard.sprite.getPosition();
+            float currentAngle = chosenCard.currentRotation;
+            currentPosition = lerp(currentPosition, chosenCard.desiredPosition, 0.1);
+            currentAngle = lerp(currentAngle, chosenCard.desiredRotation, 0.2);
+            chosenCard.sprite.setPosition(currentPosition);
+            chosenCard.sprite.setRotation(currentAngle);
+            chosenCard.currentRotation = currentAngle;
         }
 
         ImGui::EndFrame();
@@ -398,30 +466,32 @@ int main(void)
             window.draw(stable3[i].sprite);
         }
         
-        if (chosenIndex != -1)
+        if (hoveredCard.isValid())
         {
             //if a card is chosen create it's shadow, highlight and draw it again separately
-            sf::IntRect texRect = cards[chosenIndex].sprite.getTextureRect();
+            CardVisual& chosenCard = piles[hoveredCard.pile]->at(hoveredCard.id);
+
+            sf::IntRect texRect = chosenCard.sprite.getTextureRect();
             sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
             cardShadow.setFillColor(sf::Color(0, 0, 0, gShadowAlpha));
-            cardShadow.setPosition(cards[chosenIndex].sprite.getPosition() + gShadowOffset);
-            cardShadow.setOrigin(cards[chosenIndex].sprite.getOrigin());
+            cardShadow.setPosition(chosenCard.sprite.getPosition() + gShadowOffset);
+            cardShadow.setOrigin(chosenCard.sprite.getOrigin());
             cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
-            cardShadow.setScale(cards[chosenIndex].sprite.getScale()* gShadowScale);
+            cardShadow.setScale(chosenCard.sprite.getScale()* gShadowScale);
             cardShadow.setOutlineThickness(gShadowThickness);
-            cardShadow.setRotation(cards[chosenIndex].sprite.getRotation());
+            cardShadow.setRotation(chosenCard.sprite.getRotation());
             window.draw(cardShadow);
 
             sf::RectangleShape cardHighlight(sf::Vector2f(texRect.width, texRect.height));
             cardHighlight.setFillColor(sf::Color::Cyan);
-            cardHighlight.setPosition(cards[chosenIndex].sprite.getPosition());
-            cardHighlight.setOrigin(cards[chosenIndex].sprite.getOrigin());
+            cardHighlight.setPosition(chosenCard.sprite.getPosition());
+            cardHighlight.setOrigin(chosenCard.sprite.getOrigin());
             cardHighlight.setOutlineColor(sf::Color(50, 150, 255, 200));
-            cardHighlight.setScale(cards[chosenIndex].sprite.getScale() * 1.05f);
+            cardHighlight.setScale(chosenCard.sprite.getScale() * 1.05f);
             cardHighlight.setOutlineThickness(5);
             window.draw(cardHighlight);
 
-			window.draw(cards[chosenIndex].sprite);
+			window.draw(chosenCard.sprite);
         }
 
 		ImGui::SFML::Render(window);
