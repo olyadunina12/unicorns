@@ -29,7 +29,7 @@ enum Pile : uint8_t { unicorns, bonuses, penalties, hand, count };
 
 struct CardSelection
 {
-    int id;
+    int id = -1;
     Pile pile;
 
     void reset()
@@ -231,7 +231,7 @@ int main(void)
 
     sf::Sprite bgSprite;
     bgSprite.setTexture(bgTexture);
-    bgSprite.setScale(1.4, 1.4);
+    bgSprite.setScale(1, 1.3);
     bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
 
     sf::Texture cardTexture;
