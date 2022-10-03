@@ -29,7 +29,7 @@ enum Pile : uint8_t { unicorns, bonuses, penalties, hand, count };
 
 struct CardSelection
 {
-    int id;
+    int id = -1;
     Pile pile;
 
     void reset()
@@ -104,16 +104,15 @@ void HandCardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& car
 }
 void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& cardStable, int chosenIndex)
 {
-    for (int i = stable.size()-1; i >= 0; i--)
+    for (int i = 0; i < stable.size(); i++)
     {
         sf::Vector2f cardPosition;
         cardPosition = cardStable;
-        cardPosition.y -= (100 * i);
+        cardPosition.y -= (100 * (stable.size() - i - 1));
         stable[i].desiredPosition = cardPosition;
         stable[i].desiredScale = gCommonCardScale;
         if (chosenIndex > -1 && chosenIndex == i)
         {
-            stable[i].desiredPosition += gMainCardShift;
             stable[i].desiredRotation = 0;
             stable[i].desiredScale = gMainCardScale;
         }
@@ -174,17 +173,40 @@ CardVisual CreateCard(sf::Texture& tex, sf::Vector2f& pos)
     return result;
 }
 
-void NetworkingThreadEntry(const sf::RenderWindow* window)
+sf::TcpSocket serverConnection;
+
+void ConnectToServerEntry()
 {
     sf::Packet handshake;
-    handshake << MAGIC_STRING;
+    handshake << PacketType::Handshake;
+    handshake << HANDSHAKE_MAGIC_STRING;
 
     sf::UdpSocket socket;
+    socket.setBlocking(false);
 
-    while (window->isOpen())
+	sf::TcpListener listener;
+	listener.setBlocking(false);
+
+    for (int i = 0; i < 100; ++i)
     {
+        socket.bind(4242);
 		socket.send(handshake, sf::IpAddress::Broadcast, 4242);
         sf::sleep(sf::seconds(0.5f));
+
+        sf::Socket::Status status = listener.listen(4243);
+        for (int i = 0; i < 100; ++i)
+        {
+			sf::sleep(sf::seconds(0.1f));
+            if (status == sf::Socket::Done
+                && (status = listener.accept(serverConnection)) == sf::Socket::Done)
+            {
+                break;
+            }
+        }
+        if (status == sf::Socket::Done)
+        {
+            break;
+        }
     }
 }
 
@@ -193,18 +215,24 @@ int main(void)
 	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
     window.setVerticalSyncEnabled(true);
 
+	sf::Vector2f windowScale(1, 1);
+
     ImGui::SFML::Init(window);
 
-    std::thread networkingThread(&NetworkingThreadEntry, &window);
+    std::thread networkingThread;
 
     sf::Texture bgTexture;
     if (!bgTexture.loadFromFile("./assets/background.jpg"))
     {
         printf("No image \n");
     }
+    bgTexture.setRepeated(true);
+    bgTexture.setSmooth(true);
+
     sf::Sprite bgSprite;
     bgSprite.setTexture(bgTexture);
-    bgSprite.setScale(2, 2);
+    bgSprite.setScale(1, 1.3);
+    bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
 
     sf::Texture cardTexture;
     if (!cardTexture.loadFromFile("./assets/base/Baby Unicorn (Green)/img.jpg"))
@@ -235,14 +263,23 @@ int main(void)
     centerPosition.x /= 2;
     
     //create a chosen baby-unicorn
-    CardVisual newCard = CreateCard(cardTexture, cardStable1);
-    stable1.push_back(newCard);
+    for (int i = 0; i < 3; ++i)
+    {
+		CardVisual newCard = CreateCard(cardTexture, cardStable1);
+		stable1.push_back(newCard);
+    }
     stablePositioning(stable1, cardStable1, -1);
-    CardVisual newCard2 = CreateCard(cardTexture, cardStable2);
-    stable2.push_back(newCard);
+    for (int i = 0; i < 3; ++i)
+    {
+        CardVisual newCard = CreateCard(cardTexture, cardStable2);
+        stable2.push_back(newCard);
+    }
     stablePositioning(stable2, cardStable2, -1);
-    CardVisual newCard3 = CreateCard(cardTexture, cardStable3);
-    stable3.push_back(newCard);
+    for (int i = 0; i < 3; ++i)
+    {
+        CardVisual newCard = CreateCard(cardTexture, cardStable3);
+        stable3.push_back(newCard);
+    }
     stablePositioning(stable3, cardStable3, -1);
 
     //int chosenIndex = -1;
@@ -290,13 +327,18 @@ int main(void)
 
             // "close requested" event: we close the window
             if (event.type == sf::Event::Closed)
+            {
                 window.close();
+            }
             if (event.type == sf::Event::Resized)
             {
                 sf::View view;
-                view.setCenter(event.size.width / 2, event.size.height / 2);
-                view.setSize(event.size.width, event.size.height);
+                view.setCenter(1920 / 2, 1080 / 2);
+                view.setSize(1920, 1080);
                 window.setView(view);
+
+                windowScale.x = 1920.f / event.size.width;
+                windowScale.y = 1080.f / event.size.height;
             }
 
  
@@ -321,8 +363,8 @@ int main(void)
             //if mouse is moved
             if (event.type == sf::Event::MouseMoved)
             {
-                mousePosition.x = event.mouseMove.x;
-                mousePosition.y = event.mouseMove.y;
+                mousePosition.x = event.mouseMove.x * windowScale.x;
+                mousePosition.y = event.mouseMove.y * windowScale.y;
 
                 if (mousePress)
                     continue;
@@ -390,20 +432,27 @@ int main(void)
         }
         else if (server.proc)
         {
-            if (ImGui::Button("Stop server"))
-            {
-				StopServerProcess(server);
-            }
             std::string out;
             if (ReadFromServer(server, out))
             {
                 serverOutput.push_back(out);
             }
 
+            ImGui::Begin("Server");
+            if (ImGui::Button("Stop server"))
+            {
+				StopServerProcess(server);
+            }
             for (auto& It : serverOutput)
             {
-                ImGui::Text("%s", It.c_str());
+				ImGui::TextUnformatted(It.c_str(), It.c_str() + It.size());
             }
+            ImGui::End();
+        }
+
+        if (!networkingThread.joinable() && ImGui::Button("Connect to server"))
+        {
+			networkingThread = std::thread(&ConnectToServerEntry);
         }
 #endif
 
@@ -498,9 +547,8 @@ int main(void)
         window.display();
     }
 
-	if (server.proc) StopServerProcess(server);
-
     ImGui::SFML::Shutdown(window);
 
-    networkingThread.join();
+	if (server.proc) StopServerProcess(server);
+    if (networkingThread.joinable()) networkingThread.join();
 }

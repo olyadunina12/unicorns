@@ -14,7 +14,8 @@ struct ServerHandles
             proc, thread;
     std::thread commsThread;
     std::mutex  commsLock;
-    std::vector<std::string>  commsText;
+    std::string commsText;
+    bool shouldExit = false;
 };
 
 bool StartServerProcess(ServerHandles& outHandles);

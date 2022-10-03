@@ -1,4 +1,5 @@
 #include "LocalServer.h"
+
 #include <iostream>
 #include <cassert>
 
@@ -9,17 +10,24 @@ bool StartServerProcess(ServerHandles& outHandles)
 	flags = CREATE_NO_WINDOW;
 #endif
 
-	CreatePipe(&outHandles.readPipeToServer, &outHandles.writePipeToServer, nullptr, 0);
-	SetHandleInformation(outHandles.readPipeToServer, HANDLE_FLAG_INHERIT, 0);
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
 
-	CreatePipe(&outHandles.readPipeFromServer, &outHandles.writePipeFromServer, nullptr, 0);
-	SetHandleInformation(outHandles.readPipeFromServer, HANDLE_FLAG_INHERIT, 0);
+	CreatePipe(&outHandles.readPipeToServer, &outHandles.writePipeToServer, &saAttr, 0);
+	SetHandleInformation(outHandles.readPipeToServer, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+	//SetHandleInformation(outHandles.writePipeToServer, HANDLE_FLAG_INHERIT, 0);
+
+	CreatePipe(&outHandles.readPipeFromServer, &outHandles.writePipeFromServer, &saAttr, 0);
+	//SetHandleInformation(outHandles.readPipeFromServer, HANDLE_FLAG_INHERIT, 0);
+	SetHandleInformation(outHandles.writePipeFromServer, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
 
 	STARTUPINFOA startupInfo{};
 
 	startupInfo.hStdInput  = outHandles.readPipeToServer;
-	startupInfo.hStdOutput = outHandles.writePipeFromServer;
 	startupInfo.hStdError  = outHandles.writePipeFromServer;
+	startupInfo.hStdOutput = outHandles.writePipeFromServer;
 	startupInfo.dwFlags = STARTF_USESTDHANDLES;
 	startupInfo.cb = sizeof(startupInfo);
 
@@ -39,29 +47,31 @@ bool StartServerProcess(ServerHandles& outHandles)
 	);
 	outHandles.proc   = processInfo.hProcess;
 	outHandles.thread = processInfo.hThread;
-	if (result)
+	if (!result)
 	{
-		std::cout << "Sucessfully started server. ID:"
-			<< processInfo.dwProcessId << "\n";
-		return true;
+		std::cout << "Failed to start server.\n";
+		return false;
 	}
+
+	std::cout << "Sucessfully started server. ID:"
+		<< processInfo.dwProcessId << "\n";
 
 	outHandles.commsThread = std::thread([&outHandles]() {
 		char buf[64];
 		DWORD read;
 
-		while (ReadFile(outHandles.readPipeFromServer, buf, sizeof(buf), &read, NULL))
+		while (!outHandles.shouldExit && ReadFile(outHandles.readPipeFromServer, buf, sizeof(buf), &read, NULL))
 		{
 			if (read > 0)
 			{
 				outHandles.commsLock.lock();
-				outHandles.commsText.emplace_back(buf, read);
+				outHandles.commsText.append(buf, read);
 				outHandles.commsLock.unlock();
 			}
 		}
 	});
 
-	return false;
+	return true;
 }
 
 void StopServerProcess(ServerHandles& handles)
@@ -70,13 +80,22 @@ void StopServerProcess(ServerHandles& handles)
 
 	CloseHandle(handles.writePipeToServer);
 	CloseHandle(handles.readPipeToServer);
+	handles.writePipeToServer = 0;
+	handles.readPipeToServer = 0;
+
+	handles.shouldExit = true;
+	WriteFile(handles.writePipeFromServer, "\r\n", 2, nullptr, nullptr);
 
 	CloseHandle(handles.writePipeFromServer);
 	CloseHandle(handles.readPipeFromServer);
+	handles.writePipeFromServer = 0;
+	handles.readPipeFromServer = 0;
 
 	TerminateProcess(handles.proc, 0);
+	handles.proc = 0;
+	handles.thread = 0;
 
-	handles.commsThread.join();
+	if (handles.commsThread.joinable()) handles.commsThread.join();
 }
 
 bool WriteToServer(ServerHandles& handles, std::string_view inText)
@@ -92,12 +111,10 @@ bool ReadFromServer(ServerHandles& handles, std::string& outText)
 	if (!handles.commsText.empty())
 	{
 		handles.commsLock.lock();
-		outText = std::move(handles.commsText.front());
-		handles.commsText.erase(handles.commsText.begin());
+		outText += handles.commsText;
+		handles.commsText.clear();
 		handles.commsLock.unlock();
 		return true;
 	}
 	return false;
 }
-
-

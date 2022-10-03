@@ -1,12 +1,20 @@
 #include <SFML/Network.hpp>
 #include "../Connect/Unicorns.h"
 
+#include "Comms.h"
+
 #include <string>
 #include <string_view>
 #include <iostream>
 #include <thread>
+#include <mutex>
+#include <list>
+#include <memory>
 
 std::atomic<bool> gExiting = false;
+
+std::mutex gClientsLock;
+std::list<std::unique_ptr<sf::TcpSocket>> gClients;
 
 void listenForClients()
 {
@@ -28,13 +36,31 @@ void listenForClients()
 			continue;
 		}
 
-		std::string_view magic = MAGIC_STRING;
+		static std::string_view magic = HANDSHAKE_MAGIC_STRING;
 		std::string magicString;
-		if ((handshake >> magicString) && magicString == magic)
+		PacketType type;
+
+		if ((handshake >> type) &&
+			type == PacketType::Handshake &&
+			(handshake >> magicString) &&
+			magicString == magic)
 		{
-			std::cout << ("New client connected!!!!") << std::endl;
-			std::cout << remoteAddress.toString() << ":" << port << std::endl;
-			std::cout << ("------------------------") << std::endl;
+			Print("New client trying to connect!!!!");
+			Print(remoteAddress.toString() + ":" + std::to_string(port));
+			Print("--------------------------------");
+			
+			std::unique_ptr<sf::TcpSocket> socket(new sf::TcpSocket());
+			if (socket->connect(remoteAddress, 4243) == sf::Socket::Done)
+			{
+				Print("SUCESS");
+				gClientsLock.lock();
+				gClients.push_back(std::move(socket));
+				gClientsLock.unlock();
+			}
+			else
+			{
+				Print("FAIL");
+			}
 		}
 	}
 }
@@ -43,11 +69,10 @@ int main(void)
 {
 	std::thread clientListeningThread(listenForClients);
 
-	std::string input;
 	while (true)
 	{
-		std::cin >> input;
-		if (!input.empty())
+		std::string input;
+		if (ReadInput(input) && input.find("quit") != input.npos)
 		{
 			gExiting = true;
 			break;
