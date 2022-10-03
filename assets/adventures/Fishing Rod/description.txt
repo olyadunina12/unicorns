@@ -1,3 +1,4 @@
 Type: Instant
 Copies: 2
 Description: Play this card when another player tries to STEAL a card. Move the card that would be stolen into your Stable instead.
+Id: 14

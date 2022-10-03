@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: Basic Unicorn cards cannot enter any other player's Stable.
+Id: 86

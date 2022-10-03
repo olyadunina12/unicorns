@@ -1,3 +1,4 @@
 Type: Downgrade
 Copies: 2
 Description: All of your Upgrade cards affect each player's Stable.
+Id: 151

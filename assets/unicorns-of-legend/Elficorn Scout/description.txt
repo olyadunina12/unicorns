@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: When this card enters your Stable, you may look at the top 3 cards of the deck and return them in any order.
+Id: 197

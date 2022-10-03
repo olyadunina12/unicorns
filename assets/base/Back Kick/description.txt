@@ -1,3 +1,4 @@
 Type: Magic
 Copies: 3
 Description: Choose any player. Return a card in that player's Stable to their hand. That player must DISCARD a card.
+Id: 53

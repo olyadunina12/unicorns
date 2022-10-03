@@ -1,3 +1,4 @@
 Type: Downgrade
 Copies: 1
 Description: You cannot win the game if you have a Basic Unicorn card in your Stable.
+Id: 31

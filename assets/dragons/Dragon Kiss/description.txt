@@ -1,3 +1,4 @@
 Type: Magic
 Copies: 2
 Description: Search the deck for a Magic card. Play it immediately, then shuffle the deck.
+Id: 123

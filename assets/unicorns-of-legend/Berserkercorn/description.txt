@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: When this card enters your Stable, DESTROY a Unicorn card. If this card is destroyed, SACRIFICE a Unicorn card.
+Id: 189

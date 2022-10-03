@@ -1,3 +1,4 @@
 Type: Upgrade
 Copies: 2
 Description: Downgrade cards in your Stable have no effect.
+Id: 132

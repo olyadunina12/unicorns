@@ -1,3 +1,4 @@
 Type: Magic
 Copies: 2
 Description: Choose a Unicorn from each player's Stable. Shuffle them together, then deal them out face down. Those unicorns come directly into play in the new players' Stables.
+Id: 166

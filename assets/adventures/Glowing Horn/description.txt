@@ -1,3 +1,4 @@
 Type: Magic
 Copies: 1
 Description: SACRIFICE a card, then DESTROY a card. OR Bring a card from the discard pile into your Stable.
+Id: 17

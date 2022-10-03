@@ -1,3 +1,4 @@
 Type: Downgrade
 Copies: 1
 Description: All of your Unicorns are considered Pandas. Cards that affect Unicorn cards do not affect your Pandas.
+Id: 84

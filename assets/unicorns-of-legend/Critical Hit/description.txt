@@ -1,3 +1,4 @@
 Type: Upgrade
 Copies: 2
 Description: When you play a Magic card, you may SACRIFICE this card. If you do, return the Magic card to your hand, then immediately play it again.
+Id: 193

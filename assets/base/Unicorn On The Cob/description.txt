@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: When this card enters your Stable, DRAW 2 cards and DISCARD a card.
+Id: 109

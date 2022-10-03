@@ -1,3 +1,4 @@
 Type: Instant
 Copies: 3
 Description: Play this card when another player tries to play a card. Stop their card from being played and send it to the discard pile.
+Id: 23

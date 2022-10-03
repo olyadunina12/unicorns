@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: When this card enters your Stable, you may: STEAL an Upgrade card. OR Move a Downgrade card in your Stable to another player's Stable.
+Id: 24

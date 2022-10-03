@@ -1,3 +1,4 @@
 Type: Downgrade
 Copies: 1
 Description: Each time one of your Unicorn cards is sacrificed or destroyed, DISCARD a card.
+Id: 34

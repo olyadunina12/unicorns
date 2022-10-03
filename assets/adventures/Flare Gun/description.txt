@@ -1,3 +1,4 @@
 Type: Instant
 Copies: 2
 Description: Play this card at the beginning of another player's turn. That player must skip their Beginning of Turn phase and their Draw phase.
+Id: 15

@@ -1,3 +1,4 @@
 Type: Downgrade
 Copies: 2
 Description: If this card is in your Stable at the beginning of your turn, skip your Draw phase. If at any time you have no cards in your hand, move this card to any other player's Stable.
+Id: 201

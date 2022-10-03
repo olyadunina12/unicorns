@@ -1,3 +1,4 @@
 Type: Upgrade
 Copies: 1
 Description: This card can only enter a Stable if there is a Basic Unicorn card in that Stable. If this card is in your Stable at the beginning of your turn, you may bring a Basic Unicorn card from your hand directly into your Stable.
+Id: 88

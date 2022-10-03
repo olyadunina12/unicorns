@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: If this card is in your Stable at the beginning of your turn, you may DESTROY a Unicorn card. If you do, immediately skip to your End of Turn phase.
+Id: 92

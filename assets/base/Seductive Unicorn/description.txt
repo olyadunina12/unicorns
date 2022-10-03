@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: When this card enters your Stable, STEAL a Unicorn card. If this card leaves your Stable, return that Unicorn card to the Stable from which you stole it.
+Id: 94

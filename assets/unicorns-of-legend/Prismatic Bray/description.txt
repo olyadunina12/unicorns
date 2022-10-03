@@ -1,3 +1,4 @@
 Type: Magic
 Copies: 2
 Description: DISCARD up to 2 cards, then choose a number of players equal to that number. Those players must SACRIFICE a Unicorn card.
+Id: 211

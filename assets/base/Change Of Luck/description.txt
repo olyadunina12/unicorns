@@ -1,3 +1,4 @@
 Type: Magic
 Copies: 2
 Description: DRAW 2 cards and DISCARD 3 cards, then take another turn.
+Id: 68

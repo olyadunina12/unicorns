@@ -1,3 +1,4 @@
 Type: Magical Unicorn
 Copies: 1
 Description: When this card enters your Stable, you may choose any player. Return a card in that player's Stable to their hand.
+Id: 79
