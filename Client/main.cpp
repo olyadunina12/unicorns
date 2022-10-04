@@ -1,213 +1,86 @@
-#include <SFML/Window.hpp>
 #include <vector>
 #include <algorithm>
 #include <random>
-#include <SFML/Graphics.hpp>
 #include <iostream>
-
-#include "Math.h"
-#include <SFML/Network.hpp>
 #include <thread>
+#include <mutex>
+#include <filesystem>
+#include <fstream>
+
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
+#include <SFML/Network.hpp>
 
 #include <imgui.h>
 #include <imgui-SFML.h>
 
 #include "../Connect/Unicorns.h"
 #include "LocalServer.h"
-#include <mutex>
+#include "CardVisuals.h"
+#include "Math.h"
+#include "Networking.h"
 
-struct CardVisual
+bool isDelimiter(char c, const std::string& delimiter)
 {
-    sf::Sprite sprite;
-    sf::Vector2f desiredPosition;
-    sf::Vector2f desiredScale;
-    float desiredRotation;
-    float currentRotation;
-};
+    return delimiter.find(c) != delimiter.npos;
+}
 
-enum Pile : uint8_t { unicorns, bonuses, penalties, hand, count };
 
-struct CardSelection
+
+std::vector<std::string> fileRead(const std::string& fileName)
 {
-    int id = -1;
-    Pile pile;
-
-    void reset()
+    std::vector<std::string> text;
+    std::string word;
+    std::fstream newDoc;
+    newDoc.open(fileName, std::ios::in);
+    if (newDoc.is_open())
     {
-        id = -1;
-    }
-
-    bool isValid()
-    {
-        return id != -1;
-    }
-};
-
-float gSpreadAmount = 0.195f;
-float gCircleSize = 566.f;
-float gFanAngleStart = RADIANS(90);
-float gFanAngleEnd = RADIANS(46);
-float gStartRotation = 10.f;
-float gEndRotation = -10.f;
-float gShadowAlpha = 80;
-float gShadowOutlineAlpha = 75;
-float gShadowScale = 1;
-float gShadowThickness = 7;
-sf::Vector2f gShadowOffset(-18,25);
-sf::Vector2f gMainCardShift(0, -165.f);
-sf::Vector2f gCommonCardScale(0.8, 0.8);
-sf::Vector2f gMainCardScale(1.1, 1.1);
-sf::Vector2f gCircleDamping(1, 0.7);
-
-void HandCardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& cardHandPosition, int chosenIndex)
-{
-    float startAngle = lerp(gFanAngleStart, gFanAngleEnd, cards.size() / 10.f);
-    float endAngle = 3.14 - startAngle;
-    for (int i = 0; i < cards.size(); i++)
-    {
-        float alpha = i / (cards.size() - 1.f);
-
-        if (alpha != alpha)
-            alpha = 0.5f;
-        
-        if (chosenIndex > -1)
+        while (std::getline(newDoc, word))
         {
-            if (i < chosenIndex)
+            text.push_back(word);
+        }
+    }
+    return text;
+}
+std::vector<std::string> split(const std::string& fullString, const std::string& delimiter)
+{
+    std::vector<std::string> text;
+    std::string word;
+    for (int i = 0; i < fullString.size(); i++)
+    {
+        if (isDelimiter(fullString[i], delimiter))
+        {
+            if (!word.empty())
             {
-                alpha = lerp(alpha, -0.3f, gSpreadAmount);
-            }
-            else if (i > chosenIndex)
-            {
-                alpha = lerp(alpha, 1.3f, gSpreadAmount);
+                text.push_back(word);
+                word = "";                    
             }
         }
-
-        cards[i].desiredRotation = lerp(gStartRotation, gEndRotation, alpha);
-
-        float angle = lerp(startAngle, endAngle, alpha);
-        float x = cos(angle);
-        float y = sin(angle) * -0.6;
-        sf::Vector2f cardPosition(x, y);
-        cardPosition.x *= gCircleDamping.x;
-        cardPosition.y *= gCircleDamping.y;
-        cardPosition *= gCircleSize;
-        cardPosition += cardHandPosition;
-        cards[i].desiredPosition = cardPosition;
-        cards[i].desiredScale = gCommonCardScale;
-        if (chosenIndex > -1 && chosenIndex == i)
+        else
         {
-            cards[i].desiredPosition += gMainCardShift;
-            cards[i].desiredRotation = 0;
-            cards[i].desiredScale = gMainCardScale;
+            word.push_back(fullString[i]);
         }
     }
+    if(!word.empty())
+        text.push_back(word);
+    return text;
 }
-void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& cardStable, int chosenIndex)
+
+bool endsWith(const std::string& fullString, const std::string& subString)
 {
-    for (int i = 0; i < stable.size(); i++)
+    if (subString.size() > fullString.size())
+        return false;
+
+    int i = 0;
+    for (int j = fullString.size() - subString.size(); j < fullString.size(); j++)
     {
-        sf::Vector2f cardPosition;
-        cardPosition = cardStable;
-        cardPosition.y -= (100 * (stable.size() - i - 1));
-        stable[i].desiredPosition = cardPosition;
-        stable[i].desiredScale = gCommonCardScale;
-        if (chosenIndex > -1 && chosenIndex == i)
+        if (subString[i] != fullString[j])
         {
-            stable[i].desiredRotation = 0;
-            stable[i].desiredScale = gMainCardScale;
+            return false;
         }
+        i++;
     }
-}
-
-int cardChosen(std::vector<CardVisual>& source, int candidate, sf::Vector2f mousePosition)
-{
-    for (int i = source.size() - 1; i >= 0; i--)
-    {
-        sf::Vector2f localMousePosition = mousePosition - source[i].sprite.getPosition();
-
-        sf::Transform transform;
-        transform.rotate(-source[i].sprite.getRotation());
-        localMousePosition = transform.transformPoint(localMousePosition);
-
-        sf::Vector2f scale = source[i].sprite.getScale();
-        localMousePosition.x /= scale.x;
-        localMousePosition.y /= scale.y;
-
-        localMousePosition += source[i].sprite.getOrigin();
-
-        if (source[i].sprite.getLocalBounds().contains(localMousePosition))
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-void simulation(std::vector<CardVisual>& source)
-{
-    for (int i = 0; i < source.size(); i++)
-    {
-        sf::Vector2f currentPosition = source[i].sprite.getPosition();
-        sf::Vector2f currentScale = source[i].sprite.getScale();
-        currentPosition = lerp(currentPosition, source[i].desiredPosition, 0.05);
-        currentScale = lerp(currentScale, source[i].desiredScale, 0.3);
-        source[i].sprite.setPosition(currentPosition);
-        source[i].sprite.setScale(currentScale);
-        float currentAngle = source[i].currentRotation;
-        currentAngle = lerp(currentAngle, source[i].desiredRotation, 0.3);
-        source[i].sprite.setRotation(currentAngle);
-        source[i].currentRotation = currentAngle;
-    }
-}
-
-CardVisual CreateCard(sf::Texture& tex, sf::Vector2f& pos)
-{
-    CardVisual result;
-    result.sprite.setTexture(tex);
-    result.sprite.setPosition(pos);
-    result.desiredPosition = pos;
-    result.desiredRotation = 0;
-    result.currentRotation = 0;
-
-    sf::IntRect spriteSize = result.sprite.getTextureRect();
-    result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
-    return result;
-}
-
-sf::TcpSocket serverConnection;
-
-void ConnectToServerEntry()
-{
-    sf::Packet handshake;
-    handshake << PacketType::Handshake;
-    handshake << HANDSHAKE_MAGIC_STRING;
-
-    sf::UdpSocket socket;
-    socket.setBlocking(false);
-
-	sf::TcpListener listener;
-	listener.setBlocking(false);
-
-    for (int i = 0; i < 100; ++i)
-    {
-        socket.bind(4242);
-		socket.send(handshake, sf::IpAddress::Broadcast, 4242);
-        sf::sleep(sf::seconds(0.5f));
-
-        sf::Socket::Status status = listener.listen(4243);
-        for (int i = 0; i < 100; ++i)
-        {
-			sf::sleep(sf::seconds(0.1f));
-            if (status == sf::Socket::Done
-                && (status = listener.accept(serverConnection)) == sf::Socket::Done)
-            {
-                break;
-            }
-        }
-        if (status == sf::Socket::Done)
-        {
-            break;
-        }
-    }
+    return true;
 }
 
 int main(void)
@@ -233,6 +106,59 @@ int main(void)
     bgSprite.setTexture(bgTexture);
     bgSprite.setScale(1, 1.3);
     bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
+
+    std::vector<Card> cardDescs;
+    std::string path = "./assets/";
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(path))
+    {
+        std::string fullPath = entry.path().string();
+        if (!endsWith(fullPath, "description.txt"))
+        {
+            continue;
+        }
+        Card desc;
+
+        std::vector<std::string> text = split(fullPath, "\\/.");
+        if (text[1] == "adventures")
+            desc.Pack = CardPack::AdventuresPack;
+        else if (text[1] == "base")
+            desc.Pack = CardPack::BasePack;
+        else if (text[1] == "dragons")
+            desc.Pack = CardPack::DragonsPack;
+        else if (text[1] == "rainbow-apocalypse")
+            desc.Pack = CardPack::RainbowApocalypsePack;
+        else if (text[1] == "unicorns-of-legend")
+            desc.Pack = CardPack::UnicornsOfLegendPack;
+        else
+            std::cerr << "Pack not found " << text[1] << std::endl;
+        desc.Name = text[2];
+        std::vector<std::string> descriptionCard = fileRead(fullPath);
+        std::string type = split(descriptionCard[0], ":")[1];
+        if (type == " Baby Unicorn")
+            desc.Type = CardType::BabyUnicorn;
+        else if (type == " Basic Unicorn")
+            desc.Type = CardType::BasicUnicorn;
+        else if (type == " Magical Unicorn")
+            desc.Type = CardType::MagicalUnicorn;
+        else if (type == " Magic")
+            desc.Type = CardType::Magic;
+        else if (type == " Upgrade")
+            desc.Type = CardType::Upgrade;
+        else if (type == " Downgrade")
+            desc.Type = CardType::Downgrade;
+        else if (type == " Instant")
+            desc.Type = CardType::Instant;
+        else
+            std::cerr << "Type not found " << type << std::endl;
+        std::string copies = split(descriptionCard[1], ": ")[1];
+        desc.Copies = stoi(copies);
+        std::string description = descriptionCard[2];
+        desc.Description = description.substr(13);
+
+        std::string id = split(descriptionCard[3], ": ")[1];
+        desc.ID.Value = stoi(id);
+        cardDescs.push_back(desc);
+    }
 
     sf::Texture cardTexture;
     if (!cardTexture.loadFromFile("./assets/base/Baby Unicorn (Green)/img.jpg"))
@@ -265,19 +191,19 @@ int main(void)
     //create a chosen baby-unicorn
     for (int i = 0; i < 3; ++i)
     {
-		CardVisual newCard = CreateCard(cardTexture, cardStable1);
+		CardVisual newCard = createCard(cardTexture, cardStable1);
 		stable1.push_back(newCard);
     }
     stablePositioning(stable1, cardStable1, -1);
     for (int i = 0; i < 3; ++i)
     {
-        CardVisual newCard = CreateCard(cardTexture, cardStable2);
+        CardVisual newCard = createCard(cardTexture, cardStable2);
         stable2.push_back(newCard);
     }
     stablePositioning(stable2, cardStable2, -1);
     for (int i = 0; i < 3; ++i)
     {
-        CardVisual newCard = CreateCard(cardTexture, cardStable3);
+        CardVisual newCard = createCard(cardTexture, cardStable3);
         stable3.push_back(newCard);
     }
     stablePositioning(stable3, cardStable3, -1);
@@ -298,26 +224,7 @@ int main(void)
     {
         ImGui::NewFrame();
 
-#if defined (DEBUG)
-        ImGui::SliderFloat("Spread amount", &gSpreadAmount, 0, 1);
-        ImGui::SliderFloat2("Main card shift", &gMainCardShift.x, -300, +300);
-        ImGui::SliderFloat2("Main card scale", &gMainCardScale.x, 0, 2);
-        ImGui::SliderFloat2("Common card scale", &gCommonCardScale.x, 0, 1);
-        ImGui::SliderFloat2("gCircleDamping", &gCircleDamping.x, -1, +1);
-        ImGui::SliderFloat("Circle size", &gCircleSize, 0, 600);
-        ImGui::SliderAngle("Start angle", &gFanAngleStart);
-        ImGui::SliderAngle("End angle", &gFanAngleEnd);
-        ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
-        ImGui::SliderFloat("End rotation", &gEndRotation, -50, 50);
-        ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
-
-        ImGui::TextUnformatted("Shadow settings.");
-        ImGui::SliderFloat2("Shadow offset", &gShadowOffset.x, -50, 50);
-        ImGui::SliderFloat("Shadow Alpha", &gShadowAlpha, 0,255);
-        ImGui::SliderFloat("Shadow Outline Alpha", &gShadowOutlineAlpha, 0, 255);
-        ImGui::SliderFloat("Shadow Scale", &gShadowScale, 0, 50);
-        ImGui::SliderFloat("Shadow Thickness", &gShadowThickness, 0, 50);
-#endif
+        updateCardSettings();
         
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
@@ -352,8 +259,8 @@ int main(void)
             {
                 hoveredCard.reset();
 
-                HandCardPositioning(cards, cardHandPosition, -1);
-                for (int i = 0; i < (Pile::count - 1); i++)
+                handCardPositioning(cards, cardHandPosition, -1);
+                for (int i = 0; i < ((int)Pile::count - 1); i++)
                 {
                     stablePositioning(*piles[i], *stablePositions[i], -1);
                 }
@@ -373,7 +280,7 @@ int main(void)
                 Pile candidatePile = Pile::unicorns;
 
 
-                for (int i = 0; i < Pile::count; i++)
+                for (int i = 0; i < (int)Pile::count; i++)
                 {
                     candidate = cardChosen(*piles[i], candidate, mousePosition);
                     if (candidate != -1)
@@ -388,21 +295,21 @@ int main(void)
                     hoveredCard.id = candidate;
                     hoveredCard.pile = candidatePile;
 
-                    HandCardPositioning(cards, cardHandPosition, -1);
-                    for (int i = 0; i < (Pile::count - 1); i++)
+                    handCardPositioning(cards, cardHandPosition, -1);
+                    for (int i = 0; i < ((int)Pile::count - 1); i++)
                     {
                         stablePositioning(*piles[i], *stablePositions[i], -1);
                     }
 
                     if (hoveredCard.isValid())
                     {
-                        if (candidatePile == hand)
+                        if (candidatePile == Pile::hand)
                         {
-                            HandCardPositioning(cards, cardHandPosition, hoveredCard.id);
+                            handCardPositioning(cards, cardHandPosition, hoveredCard.id);
                         }
                         else
                         {
-                            stablePositioning(*piles[candidatePile], *stablePositions[candidatePile], hoveredCard.id);
+                            stablePositioning(*piles[(int)candidatePile], *stablePositions[(int)candidatePile], hoveredCard.id);
                         }
                     }
                 }
@@ -416,9 +323,9 @@ int main(void)
                 //cards appearing when space button is pressed
                 else if (event.key.code == sf::Keyboard::Space)
                 {
-                    CardVisual newCard = CreateCard(cardTexture, cardHandPosition);
+                    CardVisual newCard = createCard(cardTexture, cardHandPosition);
                     cards.push_back(newCard);
-                    HandCardPositioning(cards, cardHandPosition, -1);
+                    handCardPositioning(cards, cardHandPosition, -1);
                 }
 
             }
@@ -452,12 +359,12 @@ int main(void)
 
         if (!networkingThread.joinable() && ImGui::Button("Connect to server"))
         {
-			networkingThread = std::thread(&ConnectToServerEntry);
+			networkingThread = std::thread(&connectToServerEntry);
         }
 #endif
 
         // cards positioning simulation
-        for (int i = 0; i < (Pile::count); i++)
+        for (int i = 0; i < (int)Pile::count; i++)
         {
             simulation(*piles[i]);
         }
@@ -466,7 +373,7 @@ int main(void)
         //card moves after mouse
         if (hoveredCard.isValid() && mousePress)
         {
-            CardVisual& chosenCard = piles[hoveredCard.pile]->at(hoveredCard.id);
+            CardVisual& chosenCard = piles[(int)hoveredCard.pile]->at(hoveredCard.id);
 
             chosenCard.desiredPosition = mousePosition;
             chosenCard.desiredRotation = 0;
@@ -487,17 +394,7 @@ int main(void)
         //window.draw(card);
         for (int i = 0; i < cards.size(); i++)
         {
-            //create shadows for cards
-            sf::IntRect texRect = cards[i].sprite.getTextureRect();
-            sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
-            cardShadow.setFillColor(sf::Color(0,0,0, gShadowAlpha));
-            cardShadow.setPosition(cards[i].sprite.getPosition()+gShadowOffset);
-            cardShadow.setOrigin(cards[i].sprite.getOrigin());
-            cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
-            cardShadow.setScale(cards[i].sprite.getScale() * gShadowScale);
-            cardShadow.setOutlineThickness(gShadowThickness);
-            cardShadow.setRotation(cards[i].sprite.getRotation());
-            window.draw(cardShadow);
+            drawShadow(cards[i], window);
 
             window.draw(cards[i].sprite);
         }
@@ -518,19 +415,11 @@ int main(void)
         if (hoveredCard.isValid())
         {
             //if a card is chosen create it's shadow, highlight and draw it again separately
-            CardVisual& chosenCard = piles[hoveredCard.pile]->at(hoveredCard.id);
+            CardVisual& chosenCard = piles[(int)hoveredCard.pile]->at(hoveredCard.id);
+
+            drawShadow(chosenCard, window);
 
             sf::IntRect texRect = chosenCard.sprite.getTextureRect();
-            sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
-            cardShadow.setFillColor(sf::Color(0, 0, 0, gShadowAlpha));
-            cardShadow.setPosition(chosenCard.sprite.getPosition() + gShadowOffset);
-            cardShadow.setOrigin(chosenCard.sprite.getOrigin());
-            cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
-            cardShadow.setScale(chosenCard.sprite.getScale()* gShadowScale);
-            cardShadow.setOutlineThickness(gShadowThickness);
-            cardShadow.setRotation(chosenCard.sprite.getRotation());
-            window.draw(cardShadow);
-
             sf::RectangleShape cardHighlight(sf::Vector2f(texRect.width, texRect.height));
             cardHighlight.setFillColor(sf::Color::Cyan);
             cardHighlight.setPosition(chosenCard.sprite.getPosition());
