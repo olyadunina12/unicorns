@@ -6,6 +6,7 @@
 #include <mutex>
 #include <filesystem>
 #include <fstream>
+#include <chrono>
 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
@@ -15,73 +16,11 @@
 #include <imgui-SFML.h>
 
 #include "../Connect/Unicorns.h"
+#include "../Connect/Parsing.h"
 #include "LocalServer.h"
 #include "CardVisuals.h"
 #include "Math.h"
 #include "Networking.h"
-
-bool isDelimiter(char c, const std::string& delimiter)
-{
-    return delimiter.find(c) != delimiter.npos;
-}
-
-
-
-std::vector<std::string> fileRead(const std::string& fileName)
-{
-    std::vector<std::string> text;
-    std::string word;
-    std::fstream newDoc;
-    newDoc.open(fileName, std::ios::in);
-    if (newDoc.is_open())
-    {
-        while (std::getline(newDoc, word))
-        {
-            text.push_back(word);
-        }
-    }
-    return text;
-}
-std::vector<std::string> split(const std::string& fullString, const std::string& delimiter)
-{
-    std::vector<std::string> text;
-    std::string word;
-    for (int i = 0; i < fullString.size(); i++)
-    {
-        if (isDelimiter(fullString[i], delimiter))
-        {
-            if (!word.empty())
-            {
-                text.push_back(word);
-                word = "";                    
-            }
-        }
-        else
-        {
-            word.push_back(fullString[i]);
-        }
-    }
-    if(!word.empty())
-        text.push_back(word);
-    return text;
-}
-
-bool endsWith(const std::string& fullString, const std::string& subString)
-{
-    if (subString.size() > fullString.size())
-        return false;
-
-    int i = 0;
-    for (int j = fullString.size() - subString.size(); j < fullString.size(); j++)
-    {
-        if (subString[i] != fullString[j])
-        {
-            return false;
-        }
-        i++;
-    }
-    return true;
-}
 
 int main(void)
 {
@@ -107,6 +46,7 @@ int main(void)
     bgSprite.setScale(1, 1.3);
     bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
 
+    //create a full set of cards with descriptions, types and pack names
     std::vector<Card> cardDescs;
     std::string path = "./assets/";
     for (const auto& entry : std::filesystem::recursive_directory_iterator(path))
@@ -159,14 +99,39 @@ int main(void)
         desc.ID.Value = stoi(id);
         cardDescs.push_back(desc);
     }
+    //create a full pool of cards with all copies by ID
+    std::vector<CardID> poolOfCards = {};
 
-    sf::Texture cardTexture;
-    if (!cardTexture.loadFromFile("./assets/base/Baby Unicorn (Green)/img.jpg"))
+    for (int i = 0; i < cardDescs.size(); i++)
     {
-        printf("No image \n");
+        for (int j = 0; j < cardDescs[i].Copies; j++)
+        {
+            if(cardDescs[i].Type != CardType::BabyUnicorn)
+                poolOfCards.push_back(cardDescs[i].ID);
+        }
     }
-    cardTexture.setSmooth(true);
+    //create a pool of baby-unicorns with all copies by id
+    std::vector<CardID> poolOfBabies = {};
 
+    for (int i = 0; i < cardDescs.size(); i++)
+    {
+        for (int j = 0; j < cardDescs[i].Copies; j++)
+        {
+            if (cardDescs[i].Type == CardType::BabyUnicorn)
+                poolOfBabies.push_back(cardDescs[i].ID);
+        }
+    }
+    //randomize the order of the cards
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::shuffle(poolOfCards.begin(), poolOfCards.end(), std::default_random_engine(seed));
+
+    //randomize the order of baby-unicorns
+    std::shuffle(poolOfBabies.begin(), poolOfBabies.end(), std::default_random_engine(seed));
+      
+    //create card texture
+    loadAllTextures();
+
+    //set stable and hand positions
     bool mousePress = false;
     std::vector<CardVisual> cards;
     std::vector<CardVisual> stable1;
@@ -187,29 +152,12 @@ int main(void)
     cardStable3.x /= 2.8;
     cardStable3.y /= 1.3;
     centerPosition.x /= 2;
-    
-    //create a chosen baby-unicorn
-    for (int i = 0; i < 3; ++i)
-    {
-		CardVisual newCard = createCard(cardTexture, cardStable1);
-		stable1.push_back(newCard);
-    }
-    stablePositioning(stable1, cardStable1, -1);
-    for (int i = 0; i < 3; ++i)
-    {
-        CardVisual newCard = createCard(cardTexture, cardStable2);
-        stable2.push_back(newCard);
-    }
-    stablePositioning(stable2, cardStable2, -1);
-    for (int i = 0; i < 3; ++i)
-    {
-        CardVisual newCard = createCard(cardTexture, cardStable3);
-        stable3.push_back(newCard);
-    }
-    stablePositioning(stable3, cardStable3, -1);
 
-    //int chosenIndex = -1;
-    //Pile chosenPile = unicorns;
+    //create a chosen baby-unicorn
+    CardVisual newCard = createCard(poolOfBabies.back(), cardStable1);
+    poolOfCards.pop_back();
+    stable1.push_back(newCard);
+
     CardSelection hoveredCard;
 
     std::vector<CardVisual>* piles[] = { &stable1, &stable2, &stable3, &cards };
@@ -323,7 +271,8 @@ int main(void)
                 //cards appearing when space button is pressed
                 else if (event.key.code == sf::Keyboard::Space)
                 {
-                    CardVisual newCard = createCard(cardTexture, cardHandPosition);
+                    CardVisual newCard = createCard(poolOfCards.back(), cardHandPosition);
+                    poolOfCards.pop_back();
                     cards.push_back(newCard);
                     handCardPositioning(cards, cardHandPosition, -1);
                 }

@@ -28,6 +28,7 @@ project "unicorns-client"
 		libdirs { "dependencies/SFML/lib" }
 		links
 		{
+			"unicorns-connect",
 			"opengl32",
 			"freetype",
 			"winmm",

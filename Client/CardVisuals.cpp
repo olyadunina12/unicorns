@@ -1,7 +1,33 @@
 #include "CardVisuals.h"
 #include "Math.h"
+#include "../Connect/Parsing.h"
+
+
 
 #include "imgui.h"
+#include <filesystem>
+
+std::vector<sf::Texture> gTextures;
+void loadAllTextures()
+{
+    std::string path = "./assets/";
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(path))
+    {
+        sf::Texture cardTexture;
+        std::string fullPath = entry.path().string();
+        if (!endsWith(fullPath, "pic.jpg"))
+        {
+            continue;
+        }
+        if (!cardTexture.loadFromFile(fullPath))
+        {
+            printf("No image \n");
+        }
+        cardTexture.setSmooth(true);
+        gTextures.push_back(cardTexture);
+    }
+ 
+}
 
 float gSpreadAmount = 0.195f;
 float gCircleSize = 566.f;
@@ -43,14 +69,15 @@ void updateCardSettings()
 #endif
 }
 
-CardVisual createCard(sf::Texture& tex, sf::Vector2f& pos)
+CardVisual createCard(CardID id, sf::Vector2f& pos)
 {
     CardVisual result;
-    result.sprite.setTexture(tex);
+    result.sprite.setTexture(gTextures[id.Value]);
     result.sprite.setPosition(pos);
     result.desiredPosition = pos;
     result.desiredRotation = 0;
     result.currentRotation = 0;
+    result.ID = id;
 
     sf::IntRect spriteSize = result.sprite.getTextureRect();
     result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
@@ -173,4 +200,14 @@ void drawShadow(const CardVisual& card, sf::RenderWindow& window)
     cardShadow.setRotation(card.sprite.getRotation());
     
     window.draw(cardShadow);
+}
+
+void CardSelection::reset()
+{
+    id = -1;
+}
+
+bool CardSelection::isValid()
+{
+    return id != -1;
 }
