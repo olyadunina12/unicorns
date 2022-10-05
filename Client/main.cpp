@@ -195,8 +195,6 @@ int main(void)
                 windowScale.x = 1920.f / event.size.width;
                 windowScale.y = 1080.f / event.size.height;
             }
-
- 
             //check if mouse is pressed and find out on which card
             if (event.type == sf::Event::MouseButtonPressed)
             {
@@ -236,8 +234,7 @@ int main(void)
                         candidatePile = (Pile)i;
                         break;
                     }
-                }
-                
+                }                
                 //if (chosenIndex != candidate)
                 {
                     hoveredCard.id = candidate;
@@ -317,7 +314,6 @@ int main(void)
         {
             simulation(*piles[i]);
         }
-
         
         //card moves after mouse
         if (hoveredCard.isValid() && mousePress)

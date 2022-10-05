@@ -19,15 +19,8 @@ struct CardSelection
     int id = -1;
     Pile pile;
 
-    void reset()
-    {
-        id = -1;
-    }
-
-    bool isValid()
-    {
-        return id != -1;
-    }
+    void reset();
+    bool isValid();
 };
 
 
