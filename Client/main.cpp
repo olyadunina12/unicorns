@@ -41,6 +41,13 @@ int main(void)
     bgTexture.setRepeated(true);
     bgTexture.setSmooth(true);
 
+    sf::Texture gradientRect;
+    if (!gradientRect.loadFromFile("./assets/gradient.tga"))
+    {
+        printf("No image \n");
+    }
+    gradientRect.setSmooth(true);
+
     sf::Sprite bgSprite;
     bgSprite.setTexture(bgTexture);
     bgSprite.setScale(1, 1.3);
@@ -155,13 +162,24 @@ int main(void)
 
     //create a chosen baby-unicorn
     CardVisual newCard = createCard(poolOfBabies.back(), cardStable1);
-    poolOfCards.pop_back();
+    poolOfBabies.pop_back();
     stable1.push_back(newCard);
 
     CardSelection hoveredCard;
 
     std::vector<CardVisual>* piles[] = { &stable1, &stable2, &stable3, &cards };
     sf::Vector2f* stablePositions[] = { &cardStable1, &cardStable2, &cardStable3 };
+
+    //create a rectangle for stables
+    sf::Vector2f RectSize(815, 920);
+    sf::Vector2f RectPosition(3, 150);
+    sf::RectangleShape myStableArea(RectSize);
+    myStableArea.setPosition(RectPosition);
+    myStableArea.setOutlineThickness(3);
+    //myStableArea.setFillColor(sf::Color::Transparent);
+    myStableArea.setTexture(&gradientRect);
+    //myStableArea.setTextureRect(sf::IntRect(1, 1, 2, 2));
+    float transparency = 0;
 
     // run the program as long as the window is open
     ServerHandles server{};
@@ -173,6 +191,10 @@ int main(void)
         ImGui::NewFrame();
 
         updateCardSettings();
+        // draw
+        window.clear();
+        window.draw(bgSprite);
+
         
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
@@ -203,6 +225,27 @@ int main(void)
             //if mouse is released
             if (event.type == sf::Event::MouseButtonReleased)
             {
+                sf::FloatRect bounds = myStableArea.getGlobalBounds();
+                if (hoveredCard.isValid() && hoveredCard.pile == Pile::hand && bounds.contains(mousePosition))
+                {
+                    CardID ChosenId = cards[hoveredCard.id].ID;
+                    if (cardDescs[ChosenId.Value].Type == CardType::Upgrade)
+                    {
+                        stable2.push_back(cards[hoveredCard.id]);
+                        cards.erase(cards.begin() + hoveredCard.id);
+                    }
+                    else if (cardDescs[ChosenId.Value].Type == CardType::Downgrade)
+                    {
+                        stable3.push_back(cards[hoveredCard.id]);
+                        cards.erase(cards.begin() + hoveredCard.id);
+                    }
+                    else if (cardDescs[ChosenId.Value].Type == CardType::BabyUnicorn || cardDescs[ChosenId.Value].Type == CardType::MagicalUnicorn || cardDescs[ChosenId.Value].Type == CardType::BasicUnicorn)
+                    {
+                        stable1.push_back(cards[hoveredCard.id]);
+                        cards.erase(cards.begin() + hoveredCard.id);
+                    }
+                }
+
                 hoveredCard.reset();
 
                 handCardPositioning(cards, cardHandPosition, -1);
@@ -329,13 +372,21 @@ int main(void)
             chosenCard.sprite.setPosition(currentPosition);
             chosenCard.sprite.setRotation(currentAngle);
             chosenCard.currentRotation = currentAngle;
+
+            sf::FloatRect bounds = myStableArea.getGlobalBounds();
+            if (bounds.contains(mousePosition))
+            {
+                myStableArea.setOutlineColor(sf::Color(255, 255, 255, transparency));
+                myStableArea.setFillColor(sf::Color(255, 255, 255, transparency));
+                transparency = lerp(transparency, 200.f, 0.03);
+                window.draw(myStableArea);
+            }
+            else
+                transparency = 0;
         }
 
         ImGui::EndFrame();
 
-        // draw
-        window.clear();
-        window.draw(bgSprite);
         //window.draw(card);
         for (int i = 0; i < cards.size(); i++)
         {
@@ -373,6 +424,7 @@ int main(void)
             cardHighlight.setScale(chosenCard.sprite.getScale() * 1.05f);
             cardHighlight.setOutlineThickness(5);
             window.draw(cardHighlight);
+
 
 			window.draw(chosenCard.sprite);
         }
