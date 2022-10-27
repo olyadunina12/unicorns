@@ -22,6 +22,36 @@
 #include "Math.h"
 #include "Networking.h"
 
+struct PlayerSpace
+{
+    sf::Text name;
+    sf::RectangleShape area;
+    std::vector<CardVisual> hand;
+    std::vector<CardVisual> stable;
+};
+
+PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf::FloatRect area, sf::Texture& gradient)
+{
+    PlayerSpace result;
+    result.area.setPosition(sf::Vector2f(area.left, area.top));
+    result.area.setSize(sf::Vector2f(area.width, area.height));
+    result.area.setOutlineThickness(3);
+    result.area.setTexture(&gradient);
+
+    result.name.setPosition(sf::Vector2f(area.left + area.width/2, area.top));
+    result.name.setString(playerName);
+    result.name.setFillColor(sf::Color::Red);
+    result.name.setColor(sf::Color::Red);
+    result.name.setOutlineColor(sf::Color::White);
+    result.name.setOutlineThickness(4.5);
+    result.name.setCharacterSize(120);
+    result.name.setStyle(sf::Text::Bold);
+    result.name.setFont(font);
+    result.name.setOrigin(result.name.getLocalBounds().width/2, 0);
+
+    return result;
+}
+
 int main(void)
 {
 	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
@@ -32,6 +62,8 @@ int main(void)
     ImGui::SFML::Init(window);
 
     std::thread networkingThread;
+
+    int playerCount = 3;
 
     sf::Texture bgTexture;
     if (!bgTexture.loadFromFile("./assets/background.jpg"))
@@ -144,6 +176,7 @@ int main(void)
     std::vector<CardVisual> stable1;
     std::vector<CardVisual> stable2;
     std::vector<CardVisual> stable3;
+
     sf::Vector2f mousePosition;
     sf::Vector2f centerPosition(window.getSize());
     sf::Vector2f cardHandPosition = centerPosition;
@@ -153,33 +186,88 @@ int main(void)
     sf::Vector2f cardStable3 = centerPosition;
     cardHandPosition.x /= 1.4;
     cardStable1.x /= 13;
-    cardStable1.y /= 1.3;
+    cardStable1.y /= 1.25;
     cardStable2.x /= 4.6;
-    cardStable2.y /= 1.3;
+    cardStable2.y /= 1.25;
     cardStable3.x /= 2.8;
-    cardStable3.y /= 1.3;
+    cardStable3.y /= 1.25;
     centerPosition.x /= 2;
 
-    //create a chosen baby-unicorn
-    CardVisual newCard = createCard(poolOfBabies.back(), cardStable1);
-    poolOfBabies.pop_back();
-    stable1.push_back(newCard);
-
     CardSelection hoveredCard;
-
+    //create stables and hand for current player
     std::vector<CardVisual>* piles[] = { &stable1, &stable2, &stable3, &cards };
-    sf::Vector2f* stablePositions[] = { &cardStable1, &cardStable2, &cardStable3 };
+    sf::Vector2f* stablePositions[] = { &cardStable1, &cardStable2, &cardStable3 };   
 
     //create a rectangle for stables
-    sf::Vector2f RectSize(815, 920);
-    sf::Vector2f RectPosition(3, 150);
-    sf::RectangleShape myStableArea(RectSize);
-    myStableArea.setPosition(RectPosition);
+    sf::Vector2f rectStableSize(815, 920);
+    sf::Vector2f rectStablePosition(3, 150);
+    sf::RectangleShape myStableArea(rectStableSize);
+    myStableArea.setPosition(rectStablePosition);
     myStableArea.setOutlineThickness(3);
     //myStableArea.setFillColor(sf::Color::Transparent);
     myStableArea.setTexture(&gradientRect);
     //myStableArea.setTextureRect(sf::IntRect(1, 1, 2, 2));
     float transparency = 0;
+
+    sf::Vector2f rectTableSize(1070, 570);
+    sf::Vector2f rectTablePosition(820, 500);
+    sf::RectangleShape myTableArea(rectTableSize);
+    myTableArea.setPosition(rectTablePosition);
+    myTableArea.setOutlineThickness(3);
+    myTableArea.setTexture(&gradientRect);
+
+
+    sf::Font font;
+    if (!font.loadFromFile("./assets/AmaticSC-Regular.ttf"))
+    {
+        std::cout << "No font!" << std::endl;
+    }
+
+    //create other players and give them hand and a basic unicorn
+    std::vector<PlayerSpace> otherPlayers;
+    for (int i = 0; i < playerCount; ++i)
+    {
+        sf::FloatRect area;
+
+        float step = rectTableSize.x / playerCount;
+        area.left = rectTablePosition.x + step * i;
+        area.top = 5;
+        area.width = step;
+        area.height = rectTablePosition.y - 5;
+        otherPlayers.push_back(createPlayerSpace("player", font, area, gradientRect));
+        sf::Vector2f pos;
+        pos.x = area.left;
+        pos.y = area.top;
+        sf::Vector2f pos2;
+        pos2.x = 0;
+        pos2.y = 0;
+        CardVisual newBabyCard = createCard(poolOfBabies.back(), pos2);
+        poolOfBabies.pop_back();
+        otherPlayers[i].stable.push_back(newBabyCard);
+        for (int cardQuantity = 0; cardQuantity < 5; cardQuantity++)
+        {
+            CardVisual newCard = createCard(poolOfCards.back(), pos2);
+            poolOfCards.pop_back();
+            otherPlayers[i].hand.push_back(newCard);
+        }
+    }
+
+    //create a baby-unicorn for myself
+    CardVisual newBabyCard = createCard(poolOfBabies.back(), cardStable1);
+    poolOfBabies.pop_back();
+    stable1.push_back(newBabyCard);
+
+    //draw 5 cards in the beginning
+    for (int i = 0; i < 5; i++)
+    {
+        CardVisual newCard = createCard(poolOfCards.back(), cardHandPosition);
+        poolOfCards.pop_back();
+        cards.push_back(newCard);
+        handCardPositioning(cards, cardHandPosition, -1);
+    }
+
+    //create a vector of small signs of card types
+    
 
     // run the program as long as the window is open
     ServerHandles server{};
@@ -225,24 +313,47 @@ int main(void)
             //if mouse is released
             if (event.type == sf::Event::MouseButtonReleased)
             {
-                sf::FloatRect bounds = myStableArea.getGlobalBounds();
-                if (hoveredCard.isValid() && hoveredCard.pile == Pile::hand && bounds.contains(mousePosition))
+                sf::FloatRect myStableBounds = myStableArea.getGlobalBounds();
+                std::vector <sf::FloatRect> playersBounds;
+                bool otherPlayerIncl = false;
+                int player = -1;
+                for (int i = 0; i < playerCount; i++)
                 {
-                    CardID ChosenId = cards[hoveredCard.id].ID;
-                    if (cardDescs[ChosenId.Value].Type == CardType::Upgrade)
+                    playersBounds[i] = otherPlayers[i].area.getGlobalBounds();
+                    if (playersBounds[i].contains(mousePosition))
                     {
-                        stable2.push_back(cards[hoveredCard.id]);
-                        cards.erase(cards.begin() + hoveredCard.id);
+                        player = i;
+                        otherPlayerIncl = true;
                     }
-                    else if (cardDescs[ChosenId.Value].Type == CardType::Downgrade)
-                    {
-                        stable3.push_back(cards[hoveredCard.id]);
-                        cards.erase(cards.begin() + hoveredCard.id);
+                }
+
+                if (hoveredCard.isValid() && hoveredCard.pile == Pile::hand)
+                {
+                    if(myStableBounds.contains(mousePosition))
+                    { 
+                        CardID ChosenId = cards[hoveredCard.id].ID;
+                        if (cardDescs[ChosenId.Value].Type == CardType::Upgrade)
+                        {
+                            stable2.push_back(cards[hoveredCard.id]);
+                            cards.erase(cards.begin() + hoveredCard.id);
+                        }
+                        else if (cardDescs[ChosenId.Value].Type == CardType::Downgrade)
+                        {
+                            stable3.push_back(cards[hoveredCard.id]);
+                            cards.erase(cards.begin() + hoveredCard.id);
+                        }
+                        else if (cardDescs[ChosenId.Value].Type == CardType::BabyUnicorn || cardDescs[ChosenId.Value].Type == CardType::MagicalUnicorn || cardDescs[ChosenId.Value].Type == CardType::BasicUnicorn)
+                        {
+                            stable1.push_back(cards[hoveredCard.id]);
+                            cards.erase(cards.begin() + hoveredCard.id);
+                        }
                     }
-                    else if (cardDescs[ChosenId.Value].Type == CardType::BabyUnicorn || cardDescs[ChosenId.Value].Type == CardType::MagicalUnicorn || cardDescs[ChosenId.Value].Type == CardType::BasicUnicorn)
+                    else if (otherPlayerIncl == true)
                     {
-                        stable1.push_back(cards[hoveredCard.id]);
+                        otherPlayers[player].stable.push_back(cards[hoveredCard.id]);
                         cards.erase(cards.begin() + hoveredCard.id);
+                        player = -1;
+                        otherPlayerIncl = false;
                     }
                 }
 
@@ -373,8 +484,9 @@ int main(void)
             chosenCard.sprite.setRotation(currentAngle);
             chosenCard.currentRotation = currentAngle;
 
-            sf::FloatRect bounds = myStableArea.getGlobalBounds();
-            if (bounds.contains(mousePosition))
+            sf::FloatRect myStableBounds = myStableArea.getGlobalBounds();
+            CardID ChosenId = cards[hoveredCard.id].ID;
+            if (myStableBounds.contains(mousePosition) && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
             {
                 myStableArea.setOutlineColor(sf::Color(255, 255, 255, transparency));
                 myStableArea.setFillColor(sf::Color(255, 255, 255, transparency));
@@ -394,6 +506,14 @@ int main(void)
 
             window.draw(cards[i].sprite);
         }
+
+        window.draw(myTableArea);
+
+        for (auto& player : otherPlayers)
+        {
+            window.draw(player.name);
+        }
+
         //draw stables
         for (int i = 0; i < stable1.size(); i++)
         {
