@@ -8,6 +8,9 @@
 #include <filesystem>
 
 std::vector<sf::Texture> gTextures;
+
+std::vector<sf::Texture> gMiniTextures;
+
 void loadAllTextures()
 {
     std::string path = "./assets/";
@@ -27,6 +30,36 @@ void loadAllTextures()
         gTextures.push_back(cardTexture);
     }
  
+    gMiniTextures.resize(int(CardType::count));
+
+    if (!gMiniTextures[int(CardType::BabyUnicorn)].loadFromFile("./assets/cardTypes/babyU.png"))
+    {
+        printf("No image \n");
+    }
+    if (!gMiniTextures[int(CardType::BasicUnicorn)].loadFromFile("./assets/cardTypes/basicU.png"))
+    {
+        printf("No image \n");
+    }
+    if (!gMiniTextures[int(CardType::MagicalUnicorn)].loadFromFile("./assets/cardTypes/magicU.png"))
+    {
+        printf("No image \n");
+    }
+    if (!gMiniTextures[int(CardType::Magic)].loadFromFile("./assets/cardTypes/magic.png"))
+    {
+        printf("No image \n");
+    }
+    if (!gMiniTextures[int(CardType::Upgrade)].loadFromFile("./assets/cardTypes/upgrade.png"))
+    {
+        printf("No image \n");
+    }
+    if (!gMiniTextures[int(CardType::Downgrade)].loadFromFile("./assets/cardTypes/downgrade.png"))
+    {
+        printf("No image \n");
+    }
+    if (!gMiniTextures[int(CardType::Instant)].loadFromFile("./assets/cardTypes/instant.png"))
+    {
+        printf("No image \n");
+    }
 }
 
 float gSpreadAmount = 0.195f;
@@ -67,6 +100,22 @@ void updateCardSettings()
     ImGui::SliderFloat("Shadow Scale", &gShadowScale, 0, 50);
     ImGui::SliderFloat("Shadow Thickness", &gShadowThickness, 0, 50);
 #endif
+}
+
+
+CardVisual createIcon(CardID id, sf::Vector2f& pos, CardType type)
+{
+    CardVisual result;
+    result.sprite.setTexture(gMiniTextures[int(type)]);
+    result.sprite.setPosition(pos);
+    result.desiredPosition = pos;
+    result.desiredRotation = 0;
+    result.currentRotation = 0;
+    result.ID = id;
+
+    sf::IntRect spriteSize = result.sprite.getTextureRect();
+    result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
+    return result;
 }
 
 CardVisual createCard(CardID id, sf::Vector2f& pos)

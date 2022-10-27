@@ -235,21 +235,12 @@ int main(void)
         area.width = step;
         area.height = rectTablePosition.y - 5;
         otherPlayers.push_back(createPlayerSpace("player", font, area, gradientRect));
-        sf::Vector2f pos;
-        pos.x = area.left;
-        pos.y = area.top;
         sf::Vector2f pos2;
-        pos2.x = 0;
-        pos2.y = 0;
-        CardVisual newBabyCard = createCard(poolOfBabies.back(), pos2);
+        pos2.x = area.left + 10;
+        pos2.y = 170;
+        CardVisual newBabyCard = createIcon(poolOfBabies.back(), pos2, CardType::BabyUnicorn);
         poolOfBabies.pop_back();
         otherPlayers[i].stable.push_back(newBabyCard);
-        for (int cardQuantity = 0; cardQuantity < 5; cardQuantity++)
-        {
-            CardVisual newCard = createCard(poolOfCards.back(), pos2);
-            poolOfCards.pop_back();
-            otherPlayers[i].hand.push_back(newCard);
-        }
     }
 
     //create a baby-unicorn for myself
@@ -266,8 +257,6 @@ int main(void)
         handCardPositioning(cards, cardHandPosition, -1);
     }
 
-    //create a vector of small signs of card types
-    
 
     // run the program as long as the window is open
     ServerHandles server{};
@@ -314,13 +303,11 @@ int main(void)
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 sf::FloatRect myStableBounds = myStableArea.getGlobalBounds();
-                std::vector <sf::FloatRect> playersBounds;
                 bool otherPlayerIncl = false;
                 int player = -1;
                 for (int i = 0; i < playerCount; i++)
                 {
-                    playersBounds[i] = otherPlayers[i].area.getGlobalBounds();
-                    if (playersBounds[i].contains(mousePosition))
+                    if (otherPlayers[i].area.getGlobalBounds().contains(mousePosition))
                     {
                         player = i;
                         otherPlayerIncl = true;
@@ -485,6 +472,17 @@ int main(void)
             chosenCard.currentRotation = currentAngle;
 
             sf::FloatRect myStableBounds = myStableArea.getGlobalBounds();
+
+            bool otherPlayerIncl = false;
+            int player = -1;
+            for (int i = 0; i < playerCount; i++)
+            {
+                if (otherPlayers[i].area.getGlobalBounds().contains(mousePosition))
+                {
+                    player = i;
+                    otherPlayerIncl = true;
+                }
+            }
             CardID ChosenId = cards[hoveredCard.id].ID;
             if (myStableBounds.contains(mousePosition) && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
             {
@@ -492,6 +490,15 @@ int main(void)
                 myStableArea.setFillColor(sf::Color(255, 255, 255, transparency));
                 transparency = lerp(transparency, 200.f, 0.03);
                 window.draw(myStableArea);
+            }
+            else if (otherPlayerIncl == true && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
+            {
+                otherPlayers[player].area.setOutlineColor(sf::Color(255, 255, 255, transparency));
+                otherPlayers[player].area.setFillColor(sf::Color(255, 255, 255, transparency));
+                transparency = lerp(transparency, 200.f, 0.03);
+                window.draw(otherPlayers[player].area);
+                bool otherPlayerIncl = false;
+                int player = -1;
             }
             else
                 transparency = 0;
@@ -507,11 +514,15 @@ int main(void)
             window.draw(cards[i].sprite);
         }
 
-        window.draw(myTableArea);
+        //window.draw(myTableArea);
 
         for (auto& player : otherPlayers)
         {
             window.draw(player.name);
+            for (auto& icon : player.stable)
+            {
+                window.draw(icon.sprite);
+            }
         }
 
         //draw stables

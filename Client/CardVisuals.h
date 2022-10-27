@@ -26,6 +26,7 @@ struct CardSelection
 
 void loadAllTextures();
 void updateCardSettings();
+CardVisual createIcon(CardID id, sf::Vector2f& pos, CardType type);
 CardVisual createCard(CardID id, sf::Vector2f& pos);
 void handCardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& cardHandPosition, int chosenIndex);
 void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& cardStable, int chosenIndex);
