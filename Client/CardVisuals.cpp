@@ -111,6 +111,7 @@ CardVisual createIcon(CardID id, sf::Vector2f& pos, CardType type)
     result.desiredPosition = pos;
     result.desiredRotation = 0;
     result.currentRotation = 0;
+    result.desiredScale = sf::Vector2f(1,1);
     result.ID = id;
 
     sf::IntRect spriteSize = result.sprite.getTextureRect();
@@ -192,6 +193,23 @@ void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& card
             stable[i].desiredScale = gMainCardScale;
         }
     }
+}
+void iconsPositioning(std::vector<CardVisual>& stable, sf::RectangleShape& area)
+{
+    for (int i = 0; i < stable.size(); i++)
+    {
+        sf::Vector2f cardPosition;
+        auto rect = stable[i].sprite.getLocalBounds();
+        sf::Vector2f iconHalfSize(rect.width/2,rect.height/2);
+        cardPosition = area.getSize() + area.getPosition() - iconHalfSize;
+        int columnWidth = area.getSize().x / rect.width;
+        int row = i / columnWidth;
+        int column = i % columnWidth;
+        cardPosition.x -= rect.width * column;
+        cardPosition.y -= rect.height * row;
+        stable[i].desiredPosition = cardPosition;
+    }
+
 }
 
 int cardChosen(std::vector<CardVisual>& source, int candidate, sf::Vector2f mousePosition)

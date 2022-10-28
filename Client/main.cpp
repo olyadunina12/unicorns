@@ -243,6 +243,11 @@ int main(void)
         otherPlayers[i].stable.push_back(newBabyCard);
     }
 
+    for (PlayerSpace& person : otherPlayers)
+    {
+        iconsPositioning(person.stable, person.area);
+    }
+
     //create a baby-unicorn for myself
     CardVisual newBabyCard = createCard(poolOfBabies.back(), cardStable1);
     poolOfBabies.pop_back();
@@ -316,9 +321,9 @@ int main(void)
 
                 if (hoveredCard.isValid() && hoveredCard.pile == Pile::hand)
                 {
+                    CardID ChosenId = cards[hoveredCard.id].ID;
                     if(myStableBounds.contains(mousePosition))
                     { 
-                        CardID ChosenId = cards[hoveredCard.id].ID;
                         if (cardDescs[ChosenId.Value].Type == CardType::Upgrade)
                         {
                             stable2.push_back(cards[hoveredCard.id]);
@@ -337,15 +342,23 @@ int main(void)
                     }
                     else if (otherPlayerIncl == true)
                     {
-                        otherPlayers[player].stable.push_back(cards[hoveredCard.id]);
-                        cards.erase(cards.begin() + hoveredCard.id);
-                        player = -1;
-                        otherPlayerIncl = false;
+                        CardType type = cardDescs[ChosenId.Value].Type;
+                        if (type != CardType::Magic && type != CardType::Instant)
+                        {
+                            otherPlayers[player].stable.push_back(createIcon(ChosenId, cards[hoveredCard.id].desiredPosition, type));
+                            cards.erase(cards.begin() + hoveredCard.id);
+                            player = -1;
+                            otherPlayerIncl = false;
+                        }
                     }
                 }
 
                 hoveredCard.reset();
 
+                for (PlayerSpace& person : otherPlayers)
+                {
+                    iconsPositioning(person.stable, person.area);
+                }
                 handCardPositioning(cards, cardHandPosition, -1);
                 for (int i = 0; i < ((int)Pile::count - 1); i++)
                 {
@@ -454,6 +467,10 @@ int main(void)
         for (int i = 0; i < (int)Pile::count; i++)
         {
             simulation(*piles[i]);
+        }
+        for (PlayerSpace& person : otherPlayers)
+        {
+            simulation(person.stable);
         }
         
         //card moves after mouse
