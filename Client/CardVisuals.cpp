@@ -32,31 +32,31 @@ void loadAllTextures()
  
     gMiniTextures.resize(int(CardType::count));
 
-    if (!gMiniTextures[int(CardType::BabyUnicorn)].loadFromFile("./assets/cardTypes/babyU.png"))
+    if (!gMiniTextures[int(CardType::BabyUnicorn)].loadFromFile("./assets/cardTypes/babyU1.png"))
     {
         printf("No image \n");
     }
-    if (!gMiniTextures[int(CardType::BasicUnicorn)].loadFromFile("./assets/cardTypes/basicU.png"))
+    if (!gMiniTextures[int(CardType::BasicUnicorn)].loadFromFile("./assets/cardTypes/basicU1.png"))
     {
         printf("No image \n");
     }
-    if (!gMiniTextures[int(CardType::MagicalUnicorn)].loadFromFile("./assets/cardTypes/magicU.png"))
+    if (!gMiniTextures[int(CardType::MagicalUnicorn)].loadFromFile("./assets/cardTypes/magicU1.png"))
     {
         printf("No image \n");
     }
-    if (!gMiniTextures[int(CardType::Magic)].loadFromFile("./assets/cardTypes/magic.png"))
+    if (!gMiniTextures[int(CardType::Magic)].loadFromFile("./assets/cardTypes/magic1.png"))
     {
         printf("No image \n");
     }
-    if (!gMiniTextures[int(CardType::Upgrade)].loadFromFile("./assets/cardTypes/upgrade.png"))
+    if (!gMiniTextures[int(CardType::Upgrade)].loadFromFile("./assets/cardTypes/upgrade1.png"))
     {
         printf("No image \n");
     }
-    if (!gMiniTextures[int(CardType::Downgrade)].loadFromFile("./assets/cardTypes/downgrade.png"))
+    if (!gMiniTextures[int(CardType::Downgrade)].loadFromFile("./assets/cardTypes/downgrade1.png"))
     {
         printf("No image \n");
     }
-    if (!gMiniTextures[int(CardType::Instant)].loadFromFile("./assets/cardTypes/instant.png"))
+    if (!gMiniTextures[int(CardType::Instant)].loadFromFile("./assets/cardTypes/instant1.png"))
     {
         printf("No image \n");
     }
