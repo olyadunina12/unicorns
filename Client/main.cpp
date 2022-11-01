@@ -176,6 +176,7 @@ int main(void)
     std::vector<CardVisual> stable1;
     std::vector<CardVisual> stable2;
     std::vector<CardVisual> stable3;
+    std::vector<CardVisual> discard;
 
     sf::Vector2f mousePosition;
     sf::Vector2f centerPosition(window.getSize());
@@ -308,6 +309,7 @@ int main(void)
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 sf::FloatRect myStableBounds = myStableArea.getGlobalBounds();
+                sf::FloatRect myTableBounds = myTableArea.getGlobalBounds();
                 bool otherPlayerIncl = false;
                 int player = -1;
                 for (int i = 0; i < playerCount; i++)
@@ -322,27 +324,27 @@ int main(void)
                 if (hoveredCard.isValid() && hoveredCard.pile == Pile::hand)
                 {
                     CardID ChosenId = cards[hoveredCard.id].ID;
+                    CardType type = cardDescs[ChosenId.Value].Type;
                     if(myStableBounds.contains(mousePosition))
                     { 
-                        if (cardDescs[ChosenId.Value].Type == CardType::Upgrade)
+                        if (type == CardType::Upgrade)
                         {
                             stable2.push_back(cards[hoveredCard.id]);
                             cards.erase(cards.begin() + hoveredCard.id);
                         }
-                        else if (cardDescs[ChosenId.Value].Type == CardType::Downgrade)
+                        else if (type == CardType::Downgrade)
                         {
                             stable3.push_back(cards[hoveredCard.id]);
                             cards.erase(cards.begin() + hoveredCard.id);
                         }
-                        else if (cardDescs[ChosenId.Value].Type == CardType::BabyUnicorn || cardDescs[ChosenId.Value].Type == CardType::MagicalUnicorn || cardDescs[ChosenId.Value].Type == CardType::BasicUnicorn)
+                        else if (type == CardType::BabyUnicorn || type == CardType::MagicalUnicorn || type == CardType::BasicUnicorn)
                         {
                             stable1.push_back(cards[hoveredCard.id]);
                             cards.erase(cards.begin() + hoveredCard.id);
                         }
                     }
                     else if (otherPlayerIncl == true)
-                    {
-                        CardType type = cardDescs[ChosenId.Value].Type;
+                    {                  
                         if (type != CardType::Magic && type != CardType::Instant)
                         {
                             otherPlayers[player].stable.push_back(createIcon(ChosenId, cards[hoveredCard.id].desiredPosition, type));
@@ -350,6 +352,11 @@ int main(void)
                             player = -1;
                             otherPlayerIncl = false;
                         }
+                    }
+                    if (!myTableBounds.contains(mousePosition) && type == CardType::Magic || type == CardType::Instant)
+                    {
+                        discard.push_back(cards[hoveredCard.id]);
+                        cards.erase(cards.begin() + hoveredCard.id);
                     }
                 }
 
