@@ -356,6 +356,8 @@ int main(void)
                     if (!myTableBounds.contains(mousePosition) && type == CardType::Magic || type == CardType::Instant)
                     {
                         discard.push_back(cards[hoveredCard.id]);
+                        discard.back().desiredScale.x = 0;
+
                         cards.erase(cards.begin() + hoveredCard.id);
                     }
                 }
@@ -479,6 +481,7 @@ int main(void)
         {
             simulation(person.stable);
         }
+        simulation(discard);
         
         //card moves after mouse
         if (hoveredCard.isValid() && mousePress)
@@ -547,6 +550,12 @@ int main(void)
             {
                 window.draw(icon.sprite);
             }
+        }
+
+        //draw discard
+        for (int i = 0; i < discard.size(); i++)
+        {
+            window.draw(discard[i].sprite);
         }
 
         //draw stables
