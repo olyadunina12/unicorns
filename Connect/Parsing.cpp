@@ -24,6 +24,7 @@ std::vector<std::string> fileRead(const std::string& fileName)
     }
     return text;
 }
+
 std::vector<std::string> split(const std::string& fullString, const std::string& delimiter)
 {
     std::vector<std::string> text;
@@ -54,7 +55,7 @@ bool endsWith(const std::string& fullString, const std::string& subString)
         return false;
 
     int i = 0;
-    for (int j = fullString.size() - subString.size(); j < fullString.size(); j++)
+    for (size_t j = fullString.size() - subString.size(); j < fullString.size(); j++)
     {
         if (subString[i] != fullString[j])
         {

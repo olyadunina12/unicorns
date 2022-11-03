@@ -72,6 +72,7 @@ project "unicorns-server"
 
 	files { "Server/**.*" }
 	links {
+		"unicorns-connect",
 		"Ws2_32",
 		"winmm",
 	}
@@ -104,15 +105,25 @@ project "unicorns-connect"
 	language "C++"
 	targetdir "bin/%{cfg.buildcfg}"
 	includedirs { "dependencies/SFML/include" }
+	libdirs { "dependencies/SFML/lib" }
 
 	files { "Connect/**.*" }
 
 	filter "configurations:*"
+		defines { "SFML_STATIC" }
 
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		symbols "On"
+		links
+		{
+			"sfml-network-s-d"
+		}
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
 		optimize "On"
+		links
+		{	
+			"sfml-network-s"
+		}

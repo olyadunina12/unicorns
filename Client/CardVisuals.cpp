@@ -2,8 +2,6 @@
 #include "Math.h"
 #include "../Connect/Parsing.h"
 
-
-
 #include "imgui.h"
 #include <filesystem>
 
@@ -64,19 +62,19 @@ void loadAllTextures()
 
 float gSpreadAmount = 0.195f;
 float gCircleSize = 566.f;
-float gFanAngleStart = RADIANS(90);
-float gFanAngleEnd = RADIANS(46);
+float gFanAngleStart = RADIANS(90.f);
+float gFanAngleEnd = RADIANS(46.f);
 float gStartRotation = 10.f;
 float gEndRotation = -10.f;
 float gShadowAlpha = 80;
 float gShadowOutlineAlpha = 75;
 float gShadowScale = 1;
 float gShadowThickness = 7;
-sf::Vector2f gShadowOffset(-18, 25);
-sf::Vector2f gMainCardShift(0, -165.f);
-sf::Vector2f gCommonCardScale(0.8, 0.8);
-sf::Vector2f gMainCardScale(1.1, 1.1);
-sf::Vector2f gCircleDamping(1, 0.7);
+sf::Vector2f gShadowOffset(-18.f, 25.f);
+sf::Vector2f gMainCardShift(0.f, -165.f);
+sf::Vector2f gCommonCardScale(0.8f, 0.8f);
+sf::Vector2f gMainCardScale(1.1f, 1.1f);
+sf::Vector2f gCircleDamping(1.f, 0.7f);
 
 void updateCardSettings()
 {
@@ -115,7 +113,7 @@ CardVisual createIcon(CardID id, sf::Vector2f& pos, CardType type)
     result.ID = id;
 
     sf::IntRect spriteSize = result.sprite.getTextureRect();
-    result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
+    result.sprite.setOrigin(spriteSize.width / 2.f, spriteSize.height / 2.f);
     return result;
 }
 
@@ -130,14 +128,14 @@ CardVisual createCard(CardID id, sf::Vector2f& pos)
     result.ID = id;
 
     sf::IntRect spriteSize = result.sprite.getTextureRect();
-    result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
+    result.sprite.setOrigin(spriteSize.width / 2.f, spriteSize.height / 2.f);
     return result;
 }
 
 void handCardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& cardHandPosition, int chosenIndex)
 {
     float startAngle = lerp(gFanAngleStart, gFanAngleEnd, cards.size() / 10.f);
-    float endAngle = 3.14 - startAngle;
+    float endAngle = 3.14f - startAngle;
     for (int i = 0; i < cards.size(); i++)
     {
         float alpha = i / (cards.size() - 1.f);
@@ -161,7 +159,7 @@ void handCardPositioning(std::vector<CardVisual>& cards, const sf::Vector2f& car
 
         float angle = lerp(startAngle, endAngle, alpha);
         float x = cos(angle);
-        float y = sin(angle) * -0.6;
+        float y = sin(angle) * -0.6f;
         sf::Vector2f cardPosition(x, y);
         cardPosition.x *= gCircleDamping.x;
         cardPosition.y *= gCircleDamping.y;
@@ -202,7 +200,7 @@ void iconsPositioning(std::vector<CardVisual>& stable, sf::RectangleShape& area)
         auto rect = stable[i].sprite.getLocalBounds();
         sf::Vector2f iconHalfSize(rect.width/2,rect.height/2);
         cardPosition = area.getSize() + area.getPosition() - iconHalfSize;
-        int columnWidth = area.getSize().x / rect.width;
+        int columnWidth = (int)(area.getSize().x / rect.width);
         int row = i / columnWidth;
         int column = i % columnWidth;
         cardPosition.x -= rect.width * column;
@@ -214,7 +212,7 @@ void iconsPositioning(std::vector<CardVisual>& stable, sf::RectangleShape& area)
 
 int cardChosen(std::vector<CardVisual>& source, int candidate, sf::Vector2f mousePosition)
 {
-    for (int i = source.size() - 1; i >= 0; i--)
+    for (int i = (int)source.size() - 1; i >= 0; i--)
     {
         sf::Vector2f localMousePosition = mousePosition - source[i].sprite.getPosition();
 
@@ -242,12 +240,12 @@ void simulation(std::vector<CardVisual>& source)
     {
         sf::Vector2f currentPosition = source[i].sprite.getPosition();
         sf::Vector2f currentScale = source[i].sprite.getScale();
-        currentPosition = lerp(currentPosition, source[i].desiredPosition, 0.05);
-        currentScale = lerp(currentScale, source[i].desiredScale, 0.3);
+        currentPosition = lerp(currentPosition, source[i].desiredPosition, 0.05f);
+        currentScale = lerp(currentScale, source[i].desiredScale, 0.3f);
         source[i].sprite.setPosition(currentPosition);
         source[i].sprite.setScale(currentScale);
         float currentAngle = source[i].currentRotation;
-        currentAngle = lerp(currentAngle, source[i].desiredRotation, 0.3);
+        currentAngle = lerp(currentAngle, source[i].desiredRotation, 0.3f);
         source[i].sprite.setRotation(currentAngle);
         source[i].currentRotation = currentAngle;
     }
@@ -257,11 +255,11 @@ void drawShadow(const CardVisual& card, sf::RenderWindow& window)
 {
     //create shadows for cards
     sf::IntRect texRect = card.sprite.getTextureRect();
-    sf::RectangleShape cardShadow(sf::Vector2f(texRect.width, texRect.height));
-    cardShadow.setFillColor(sf::Color(0, 0, 0, gShadowAlpha));
+    sf::RectangleShape cardShadow(sf::Vector2f((float)texRect.width, (float)texRect.height));
+    cardShadow.setFillColor(sf::Color(0, 0, 0, (sf::Uint8)gShadowAlpha));
     cardShadow.setPosition(card.sprite.getPosition() + gShadowOffset);
     cardShadow.setOrigin(card.sprite.getOrigin());
-    cardShadow.setOutlineColor(sf::Color(0, 0, 0, gShadowOutlineAlpha));
+    cardShadow.setOutlineColor(sf::Color(0, 0, 0, (sf::Uint8)gShadowOutlineAlpha));
     cardShadow.setScale(card.sprite.getScale() * gShadowScale);
     cardShadow.setOutlineThickness(gShadowThickness);
     cardShadow.setRotation(card.sprite.getRotation());

@@ -101,7 +101,7 @@ void StopServerProcess(ServerHandles& handles)
 bool WriteToServer(ServerHandles& handles, std::string_view inText)
 {
 	DWORD written = 0;
-	WriteFile(handles.writePipeToServer, inText.data(), inText.size() + 1, &written, NULL);
+	WriteFile(handles.writePipeToServer, inText.data(), (DWORD)inText.size() + 1, &written, NULL);
 	assert(written == inText.size() + 1);
 	return written > 0;
 }
