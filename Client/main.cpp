@@ -54,8 +54,6 @@ PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf:
 
 int main(void)
 {
-    REGISTER_RPC(playCard);
-
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
 
     window.setVerticalSyncEnabled(true);
