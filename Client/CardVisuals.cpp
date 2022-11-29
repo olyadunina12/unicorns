@@ -11,6 +11,12 @@ std::vector<sf::Texture> gTextures;
 
 std::vector<sf::Texture> gMiniTextures;
 
+void cleanup()
+{
+    gTextures.clear();
+    gMiniTextures.clear();
+}
+
 void loadAllTextures()
 {
     std::string path = "./assets/";
@@ -131,6 +137,15 @@ CardVisual createCard(CardID id, sf::Vector2f& pos)
 
     sf::IntRect spriteSize = result.sprite.getTextureRect();
     result.sprite.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
+    return result;
+}
+
+sf::Sprite searchSprite(CardID &id)
+{
+    sf::Sprite result;
+    result.setTexture(gTextures[id.Value]);
+    sf::IntRect spriteSize = result.getTextureRect();
+    result.setOrigin(spriteSize.width / 2, spriteSize.height / 2);
     return result;
 }
 
@@ -269,6 +284,20 @@ void drawShadow(const CardVisual& card, sf::RenderWindow& window)
     window.draw(cardShadow);
 }
 
+void drawHighlight(sf::Sprite& picture, sf::RenderWindow& window)
+{
+    sf::IntRect texRect = picture.getTextureRect();
+    sf::RectangleShape cardHighlight(sf::Vector2f(texRect.width, texRect.height));
+    cardHighlight.setFillColor(sf::Color::Cyan);
+    sf::Vector2f position = picture.getPosition();
+    cardHighlight.setPosition(position);
+    cardHighlight.setOrigin(picture.getOrigin());
+    cardHighlight.setOutlineColor(sf::Color(50, 150, 255, 200));
+    cardHighlight.setScale(picture.getScale() * 1.05f);
+    cardHighlight.setOutlineThickness(5);
+    window.draw(cardHighlight);
+}
+
 void CardSelection::reset()
 {
     id = -1;
@@ -277,4 +306,26 @@ void CardSelection::reset()
 bool CardSelection::isValid()
 {
     return id != -1;
+}
+
+PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf::FloatRect area, sf::Texture& gradient)
+{
+    PlayerSpace result;
+    result.area.setPosition(sf::Vector2f(area.left, area.top));
+    result.area.setSize(sf::Vector2f(area.width, area.height));
+    result.area.setOutlineThickness(3);
+    result.area.setTexture(&gradient);
+
+    result.name.setPosition(sf::Vector2f(area.left + area.width / 2, area.top));
+    result.name.setString(playerName);
+    result.name.setFillColor(sf::Color::Red);
+    result.name.setColor(sf::Color::Red);
+    result.name.setOutlineColor(sf::Color::White);
+    result.name.setOutlineThickness(4.5);
+    result.name.setCharacterSize(120);
+    result.name.setStyle(sf::Text::Bold);
+    result.name.setFont(font);
+    result.name.setOrigin(result.name.getLocalBounds().width / 2, 0);
+
+    return result;
 }

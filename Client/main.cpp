@@ -22,35 +22,7 @@
 #include "Math.h"
 #include "Networking.h"
 
-struct PlayerSpace
-{
-    sf::Text name;
-    sf::RectangleShape area;
-    std::vector<CardVisual> hand;
-    std::vector<CardVisual> stable;
-};
 
-PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf::FloatRect area, sf::Texture& gradient)
-{
-    PlayerSpace result;
-    result.area.setPosition(sf::Vector2f(area.left, area.top));
-    result.area.setSize(sf::Vector2f(area.width, area.height));
-    result.area.setOutlineThickness(3);
-    result.area.setTexture(&gradient);
-
-    result.name.setPosition(sf::Vector2f(area.left + area.width/2, area.top));
-    result.name.setString(playerName);
-    result.name.setFillColor(sf::Color::Red);
-    result.name.setColor(sf::Color::Red);
-    result.name.setOutlineColor(sf::Color::White);
-    result.name.setOutlineThickness(4.5);
-    result.name.setCharacterSize(120);
-    result.name.setStyle(sf::Text::Bold);
-    result.name.setFont(font);
-    result.name.setOrigin(result.name.getLocalBounds().width/2, 0);
-
-    return result;
-}
 
 int main(void)
 {
@@ -82,8 +54,9 @@ int main(void)
 
     sf::Sprite bgSprite;
     bgSprite.setTexture(bgTexture);
-    bgSprite.setScale(1, 1.3);
+    bgSprite.setScale(2, 2.6);
     bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
+    bgSprite.setPosition(-500, -500);
 
     //create a full set of cards with descriptions, types and pack names
     std::vector<Card> cardDescs;
@@ -263,7 +236,6 @@ int main(void)
         handCardPositioning(cards, cardHandPosition, -1);
     }
 
-
     // run the program as long as the window is open
     ServerHandles server{};
     std::thread serverCommsThread;
@@ -274,10 +246,6 @@ int main(void)
         ImGui::NewFrame();
 
         updateCardSettings();
-        // draw
-        window.clear();
-        window.draw(bgSprite);
-
         
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
@@ -293,10 +261,10 @@ int main(void)
             if (event.type == sf::Event::Resized)
             {
                 sf::View view;
-                view.setCenter(1920 / 2, 1080 / 2);
                 view.setSize(1920, 1080);
+                view.setCenter(sf::Vector2f(1920 / 2, 1080 / 2));
                 window.setView(view);
-
+                 
                 windowScale.x = 1920.f / event.size.width;
                 windowScale.y = 1080.f / event.size.height;
             }
@@ -316,8 +284,8 @@ int main(void)
                 {
                     if (otherPlayers[i].area.getGlobalBounds().contains(mousePosition))
                     {
-                        player = i;
                         otherPlayerIncl = true;
+                        player = i;
                     }
                 }
 
@@ -382,6 +350,13 @@ int main(void)
                 mousePosition.x = event.mouseMove.x * windowScale.x;
                 mousePosition.y = event.mouseMove.y * windowScale.y;
 
+                //sf::View view;
+                //view.setSize(1920, 1080);
+                //sf::Vector2f viewOffset = (mousePosition - view.getSize() * 0.5f) / 2.f;
+                //view.setCenter(sf::Vector2f(1920 / 2, 1080 / 2) + viewOffset);
+                //window.setView(view);
+                //mousePosition += viewOffset;
+
                 if (mousePress)
                     continue;
 
@@ -397,7 +372,8 @@ int main(void)
                         candidatePile = (Pile)i;
                         break;
                     }
-                }                
+                }             
+
                 //if (chosenIndex != candidate)
                 {
                     hoveredCard.id = candidate;
@@ -482,7 +458,14 @@ int main(void)
             simulation(person.stable);
         }
         simulation(discard);
+
+        //mouse pressed on one of the players (cards shown)
+        // nif(mousePress && contains(mousePosition)
         
+        // draw
+        window.clear();
+        window.draw(bgSprite);
+
         //card moves after mouse
         if (hoveredCard.isValid() && mousePress)
         {
@@ -579,19 +562,51 @@ int main(void)
 
             drawShadow(chosenCard, window);
 
-            sf::IntRect texRect = chosenCard.sprite.getTextureRect();
-            sf::RectangleShape cardHighlight(sf::Vector2f(texRect.width, texRect.height));
-            cardHighlight.setFillColor(sf::Color::Cyan);
-            cardHighlight.setPosition(chosenCard.sprite.getPosition());
-            cardHighlight.setOrigin(chosenCard.sprite.getOrigin());
-            cardHighlight.setOutlineColor(sf::Color(50, 150, 255, 200));
-            cardHighlight.setScale(chosenCard.sprite.getScale() * 1.05f);
-            cardHighlight.setOutlineThickness(5);
-            window.draw(cardHighlight);
+            sf::Sprite picture = chosenCard.sprite;
 
+            drawHighlight(picture, window);
 
 			window.draw(chosenCard.sprite);
         }
+        else
+        {
+            for (PlayerSpace& person : otherPlayers)
+            {
+                if (person.area.getGlobalBounds().contains(mousePosition))
+                {
+                    for (int i = 0; i < person.stable.size(); i++)
+                    {
+                        sf::FloatRect iconBounds = person.stable[i].sprite.getGlobalBounds();
+                        if (iconBounds.contains(mousePosition) && !mousePress)
+                        {
+                            CardID id = person.stable[i].ID;
+                            sf::Sprite cardToDraw = searchSprite(id);
+
+                            sf::Vector2f position(iconBounds.left + iconBounds.width/2, iconBounds.height + iconBounds.top + cardToDraw.getOrigin().y);
+                            position.x = clamp(position.x, cardToDraw.getGlobalBounds().width / 2, window.getSize().x - cardToDraw.getGlobalBounds().width/2);
+                            cardToDraw.setPosition(position); 
+
+                            drawHighlight(cardToDraw, window);
+
+                            window.draw(cardToDraw);
+                        }
+                    }
+                }
+            }
+        }
+
+        for (PlayerSpace& person : otherPlayers)
+        {
+            sf::FloatRect area = person.area.getGlobalBounds();
+            sf::RectangleShape rectatangleArea;
+            rectatangleArea.setPosition(area.left, area.top);
+            rectatangleArea.setSize(sf::Vector2f(area.width, area.height));
+            rectatangleArea.setFillColor(sf::Color::Transparent);
+            rectatangleArea.setOutlineColor(sf::Color(255, 255, 255, 150));
+            rectatangleArea.setOutlineThickness(3);
+            window.draw(rectatangleArea);
+        }
+        
 
 		ImGui::SFML::Render(window);
         window.display();
@@ -601,4 +616,6 @@ int main(void)
 
 	if (server.proc) StopServerProcess(server);
     if (networkingThread.joinable()) networkingThread.join();
+
+    cleanup();
 }

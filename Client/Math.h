@@ -7,3 +7,13 @@ T lerp(T a, T b, float alpha)
 }
 
 #define RADIANS(x) (x * (3.14 / 180))
+
+template <typename T>
+T clamp(T x, T min, T max)
+{
+    if (x < min)
+        return min;
+    else if(x > max)
+        return max;
+    return x;
+}
