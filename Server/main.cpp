@@ -114,6 +114,20 @@ void tick(void)
             }
         }
     }
+
+    for (auto& It : gClientConnections)
+    {
+        std::vector<CardID> hand;
+        std::vector<CardID> stable;
+        for (int i = 0; i < 50; ++i)
+        {
+            hand.push_back(CardID{sf::Uint8(i)});
+            stable.push_back(CardID{sf::Uint8(255 - i)});
+        }
+        sf::Packet packet = PACK_RPC(syncDecks_Client, PlayerID{ sf::Uint8(-1) }, hand, stable);
+        It.socket->send(packet);
+    }
+
     if (type == PacketType::RPC)
     {
         receiveRPC(message);
@@ -143,12 +157,7 @@ void tick(void)
     }
 }
 
-void playCard(PlayerID p, CardID c)
-{
-    std::cout << p.Value << " " << c.Value;
-}
-
-void exitServer()
+void exit_Server()
 {
     gState = ServerState::Exiting;
 }
@@ -158,8 +167,7 @@ int main(void)
     gUdpSocket.bind(4242);
     gUdpSocket.setBlocking(false);
 
-    REGISTER_RPC(playCard);
-    REGISTER_RPC(exitServer);
+    REGISTER_RPC(exit_Server);
 
     while (gState != ServerState::Exiting)
     {

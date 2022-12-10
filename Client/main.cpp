@@ -52,8 +52,25 @@ PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf:
     return result;
 }
 
+void syncDecks_Client(PlayerID owner, std::vector<CardID> hand, std::vector<CardID> stable)
+{
+    printf("%i\n", (int)owner.Value);
+    for (auto& It : hand)
+    {
+        printf("%i ", (int)It.Value);
+    }
+    printf("\n");
+    for (auto& It : stable)
+    {
+        printf("%i ", (int)It.Value);
+    }
+    printf("\n");
+}
+
 int main(void)
 {
+    REGISTER_RPC(syncDecks_Client);
+
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
 
     window.setVerticalSyncEnabled(true);
@@ -435,7 +452,6 @@ int main(void)
                     cards.push_back(newCard);
                     handCardPositioning(cards, cardHandPosition, -1);
                 }
-
             }
         }
 
@@ -467,6 +483,7 @@ int main(void)
 
             if (ImGui::Button("Stop server"))
             {
+                sendPacket(PACK_RPC(exit_Server));
                 StopServerProcess(server);
             }
             for (auto& It : serverOutput)
@@ -477,6 +494,7 @@ int main(void)
 
         ImGui::End();
 #endif
+        tickNetwork();
 
         // cards positioning simulation
         for (int i = 0; i < (int)Pile::count; i++)
@@ -605,6 +623,10 @@ int main(void)
 
     ImGui::SFML::Shutdown(window);
 
-    if (server.proc) StopServerProcess(server);
+    if (server.proc)
+    {
+        sendPacket(PACK_RPC(exit_Server));
+        StopServerProcess(server);
+    }
     if (networkingThread.joinable()) networkingThread.join();
 }

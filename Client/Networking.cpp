@@ -1,8 +1,10 @@
 #include "Networking.h"
 #include "../Connect/Serialization.h"
 #include "../Connect/Unicorns.h"
+#include "../Connect/RPC.h"
 
 #include <SFML/Network.hpp>
+#include <cassert>
 
 sf::TcpSocket serverConnection;
 bool isConnected;
@@ -21,7 +23,7 @@ void connectToServerEntry(std::string Name)
 
     sf::UdpSocket socket;
     socket.setBlocking(false);
-	socket.bind(4242);
+    socket.bind(4242);
 
     sf::TcpListener listener;
     listener.setBlocking(false);
@@ -38,6 +40,7 @@ void connectToServerEntry(std::string Name)
             if (status == sf::Socket::Done
                 && (status = listener.accept(serverConnection)) == sf::Socket::Done)
             {
+                serverConnection.setBlocking(false);
                 break;
             }
         }
@@ -52,5 +55,19 @@ void connectToServerEntry(std::string Name)
 void sendPacket(sf::Packet packet)
 {
     serverConnection.send(packet);
+}
+
+void tickNetwork()
+{
+    sf::Packet message;
+    PacketType type = PacketType::Invalid;
+
+    sf::Socket::Status result = serverConnection.receive(message);
+    if (result != sf::Socket::Done || (message >> type) == false)
+    {
+        return;
+    }
+    assert(type == PacketType::RPC);
+    receiveRPC(message);
 }
 

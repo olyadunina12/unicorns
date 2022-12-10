@@ -5,3 +5,4 @@
 bool isConnectedToServer();
 void connectToServerEntry(std::string Name);
 void sendPacket(sf::Packet packet);
+void tickNetwork();
