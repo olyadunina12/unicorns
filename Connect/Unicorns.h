@@ -8,21 +8,11 @@
 
 enum class PacketType : sf::Uint8
 {
+	Invalid,
     Handshake,
     Info,
+    RPC,
 };
-
-template<typename T>
-sf::Packet& operator<<(sf::Packet& packet, T val)
-{
-    return (packet << std::underlying_type_t<T>(val));
-}
-
-template<typename T>
-sf::Packet& operator>>(sf::Packet& packet, T& val)
-{
-    return (packet >> (std::underlying_type_t<T>&)(val));
-}
 
 struct CardID { sf::Uint8 Value; };
 struct PlayerID { sf::Uint8 Value; };

@@ -21,15 +21,19 @@
 #include "CardVisuals.h"
 #include "Math.h"
 #include "Networking.h"
+#include "../Connect/RPC.h"
 
 
 
 int main(void)
 {
-	sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
+    REGISTER_RPC(playCard);
+
+    sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
+
     window.setVerticalSyncEnabled(true);
 
-	sf::Vector2f windowScale(1, 1);
+    sf::Vector2f windowScale(1, 1);
 
     ImGui::SFML::Init(window);
 
@@ -134,7 +138,7 @@ int main(void)
         }
     }
     //randomize the order of the cards
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    unsigned int seed = (unsigned int)std::chrono::system_clock::now().time_since_epoch().count();
     std::shuffle(poolOfCards.begin(), poolOfCards.end(), std::default_random_engine(seed));
 
     //randomize the order of baby-unicorns
@@ -158,14 +162,14 @@ int main(void)
     sf::Vector2f cardStable1 = centerPosition;
     sf::Vector2f cardStable2 = centerPosition;
     sf::Vector2f cardStable3 = centerPosition;
-    cardHandPosition.x /= 1.4;
-    cardStable1.x /= 13;
-    cardStable1.y /= 1.25;
-    cardStable2.x /= 4.6;
-    cardStable2.y /= 1.25;
-    cardStable3.x /= 2.8;
-    cardStable3.y /= 1.25;
-    centerPosition.x /= 2;
+    cardHandPosition.x /= 1.4f;
+    cardStable1.x /= 13.f;
+    cardStable1.y /= 1.25f;
+    cardStable2.x /= 4.6f;
+    cardStable2.y /= 1.25f;
+    cardStable3.x /= 2.8f;
+    cardStable3.y /= 1.25f;
+    centerPosition.x /= 2.f;
 
     CardSelection hoveredCard;
     //create stables and hand for current player
@@ -246,12 +250,15 @@ int main(void)
         ImGui::NewFrame();
 
         updateCardSettings();
-        
+        // draw
+        window.clear();
+        window.draw(bgSprite);
+
         // check all the window's events that were triggered since the last iteration of the loop
         sf::Event event;
         while (window.pollEvent(event))
         {
-			ImGui::SFML::ProcessEvent(window, event);
+            ImGui::SFML::ProcessEvent(window, event);
 
             // "close requested" event: we close the window
             if (event.type == sf::Event::Closed)
@@ -363,7 +370,6 @@ int main(void)
                 int candidate = -1;
                 Pile candidatePile = Pile::unicorns;
 
-
                 for (int i = 0; i < (int)Pile::count; i++)
                 {
                     candidate = cardChosen(*piles[i], candidate, mousePosition);
@@ -372,8 +378,7 @@ int main(void)
                         candidatePile = (Pile)i;
                         break;
                     }
-                }             
-
+                }
                 //if (chosenIndex != candidate)
                 {
                     hoveredCard.id = candidate;
@@ -417,6 +422,18 @@ int main(void)
         }
 
 #if defined (DEBUG)
+        ImGui::Begin("Server");
+
+        if (!networkingThread.joinable())
+        {
+            static char name[64];
+            ImGui::InputText("Name: ", name, sizeof(name));
+            if (ImGui::Button("Connect to server"))
+            {
+                networkingThread = std::thread(&connectToServerEntry, name);
+            }
+        }
+
         if (server.proc == nullptr && ImGui::Button("Start server"))
         {
             serverOutput.clear();
@@ -430,22 +447,17 @@ int main(void)
                 serverOutput.push_back(out);
             }
 
-            ImGui::Begin("Server");
             if (ImGui::Button("Stop server"))
             {
-				StopServerProcess(server);
+                StopServerProcess(server);
             }
             for (auto& It : serverOutput)
             {
-				ImGui::TextUnformatted(It.c_str(), It.c_str() + It.size());
+                ImGui::TextUnformatted(It.c_str(), It.c_str() + It.size());
             }
-            ImGui::End();
         }
 
-        if (!networkingThread.joinable() && ImGui::Button("Connect to server"))
-        {
-			networkingThread = std::thread(&connectToServerEntry);
-        }
+        ImGui::End();
 #endif
 
         // cards positioning simulation
@@ -475,8 +487,8 @@ int main(void)
             chosenCard.desiredRotation = 0;
             sf::Vector2f currentPosition = chosenCard.sprite.getPosition();
             float currentAngle = chosenCard.currentRotation;
-            currentPosition = lerp(currentPosition, chosenCard.desiredPosition, 0.1);
-            currentAngle = lerp(currentAngle, chosenCard.desiredRotation, 0.2);
+            currentPosition = lerp(currentPosition, chosenCard.desiredPosition, 0.1f);
+            currentAngle = lerp(currentAngle, chosenCard.desiredRotation, 0.2f);
             chosenCard.sprite.setPosition(currentPosition);
             chosenCard.sprite.setRotation(currentAngle);
             chosenCard.currentRotation = currentAngle;
@@ -496,16 +508,16 @@ int main(void)
             CardID ChosenId = cards[hoveredCard.id].ID;
             if (myStableBounds.contains(mousePosition) && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
             {
-                myStableArea.setOutlineColor(sf::Color(255, 255, 255, transparency));
-                myStableArea.setFillColor(sf::Color(255, 255, 255, transparency));
-                transparency = lerp(transparency, 200.f, 0.03);
+                myStableArea.setOutlineColor(sf::Color(255, 255, 255, (sf::Uint8)transparency));
+                myStableArea.setFillColor(sf::Color(255, 255, 255, (sf::Uint8)transparency));
+                transparency = lerp(transparency, 200.f, 0.03f);
                 window.draw(myStableArea);
             }
             else if (otherPlayerIncl == true && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
             {
-                otherPlayers[player].area.setOutlineColor(sf::Color(255, 255, 255, transparency));
-                otherPlayers[player].area.setFillColor(sf::Color(255, 255, 255, transparency));
-                transparency = lerp(transparency, 200.f, 0.03);
+                otherPlayers[player].area.setOutlineColor(sf::Color(255, 255, 255, (sf::Uint8)transparency));
+                otherPlayers[player].area.setFillColor(sf::Color(255, 255, 255, (sf::Uint8)transparency));
+                transparency = lerp(transparency, 200.f, 0.03f);
                 window.draw(otherPlayers[player].area);
                 bool otherPlayerIncl = false;
                 int player = -1;
@@ -566,7 +578,7 @@ int main(void)
 
             drawHighlight(picture, window);
 
-			window.draw(chosenCard.sprite);
+            window.draw(chosenCard.sprite);
         }
         else
         {
@@ -608,13 +620,13 @@ int main(void)
         }
         
 
-		ImGui::SFML::Render(window);
+        ImGui::SFML::Render(window);
         window.display();
     }
 
     ImGui::SFML::Shutdown(window);
 
-	if (server.proc) StopServerProcess(server);
+    if (server.proc) StopServerProcess(server);
     if (networkingThread.joinable()) networkingThread.join();
 
     cleanup();

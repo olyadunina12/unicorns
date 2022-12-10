@@ -4,6 +4,8 @@
 
 bool ReadInput(std::string& text)
 {
+	return false;
+
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
 
 	char buf[64];
@@ -16,10 +18,13 @@ bool ReadInput(std::string& text)
 
 void Print(std::string_view text)
 {
+	printf("%s", text.data());
+	return;
+
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE); 
 
 	DWORD written;
-	bool result = WriteFile(hStdout, text.data(), text.size(), &written, NULL);
+	BOOL result = WriteFile(hStdout, text.data(), (DWORD)text.size(), &written, NULL);
 	assert(result && written == text.size());
 	result &= WriteFile(hStdout, "\r\n", 2, &written, NULL);
 	FlushFileBuffers(hStdout);
