@@ -30,27 +30,6 @@ struct gameState
     std::vector<CardID> poolOfCards;
 };
 
-PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf::FloatRect area, sf::Texture& gradient)
-{
-    PlayerSpace result;
-    result.area.setPosition(sf::Vector2f(area.left, area.top));
-    result.area.setSize(sf::Vector2f(area.width, area.height));
-    result.area.setOutlineThickness(3);
-    result.area.setTexture(&gradient);
-
-    result.name.setPosition(sf::Vector2f(area.left + area.width/2, area.top));
-    result.name.setString(playerName);
-    result.name.setFillColor(sf::Color::Red);
-    result.name.setOutlineColor(sf::Color::White);
-    result.name.setOutlineThickness(4.5);
-    result.name.setCharacterSize(120);
-    result.name.setStyle(sf::Text::Bold);
-    result.name.setFont(font);
-    result.name.setOrigin(result.name.getLocalBounds().width/2, 0);
-
-    return result;
-}
-
 void syncDecks_Client(PlayerID owner, std::vector<CardID> hand, std::vector<CardID> stable)
 {
     printf("%i\n", (int)owner.Value);
