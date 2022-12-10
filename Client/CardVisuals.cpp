@@ -215,14 +215,13 @@ void iconsPositioning(std::vector<CardVisual>& stable, sf::RectangleShape& area)
         auto rect = stable[i].sprite.getLocalBounds();
         sf::Vector2f iconHalfSize(rect.width/2,rect.height/2);
         cardPosition = area.getSize() + area.getPosition() - iconHalfSize;
-        int columnWidth = (int)(area.getSize().x / rect.width);
+        int columnWidth = (int)(area.getSize().x / rect.width)-1;
         int row = i / columnWidth;
         int column = i % columnWidth;
         cardPosition.x -= rect.width * column;
         cardPosition.y -= rect.height * row;
         stable[i].desiredPosition = cardPosition;
     }
-
 }
 
 int cardChosen(std::vector<CardVisual>& source, int candidate, sf::Vector2f mousePosition)

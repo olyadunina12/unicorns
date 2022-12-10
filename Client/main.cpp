@@ -23,11 +23,17 @@
 #include "Networking.h"
 #include "../Connect/RPC.h"
 
+struct gameState
+{
+    int players;
+    std::vector<CardID> discard;
+    std::vector<CardID> poolOfCards;
+};
 
 
 int main(void)
 {
-    REGISTER_RPC(playCard);
+    //REGISTER_RPC(playCard);
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
 
@@ -56,11 +62,31 @@ int main(void)
     }
     gradientRect.setSmooth(true);
 
+    sf::Texture fenceV;
+    if (!fenceV.loadFromFile("./assets/fenceV.png"))
+    {
+        printf("No image \n");
+    }
+    fenceV.setSmooth(true);
+
+    sf::Sprite fenceVert;
+    fenceVert.setTexture(fenceV);
+
+    sf::Texture fenceH;
+    if (!fenceH.loadFromFile("./assets/fenceH.png"))
+    {
+        printf("No image \n");
+    }
+    fenceH.setSmooth(true);
+
+    sf::Sprite fenceHoriz;
+    fenceHoriz.setTexture(fenceH);
+
     sf::Sprite bgSprite;
     bgSprite.setTexture(bgTexture);
     bgSprite.setScale(2, 2.6);
     bgSprite.setTextureRect(sf::IntRect(0,0, 2000,2000));
-    bgSprite.setPosition(-500, -500);
+    //bgSprite.setPosition(-500, -500);
 
     //create a full set of cards with descriptions, types and pack names
     std::vector<Card> cardDescs;
@@ -470,13 +496,29 @@ int main(void)
             simulation(person.stable);
         }
         simulation(discard);
-
-        //mouse pressed on one of the players (cards shown)
-        // nif(mousePress && contains(mousePosition)
         
         // draw
         window.clear();
         window.draw(bgSprite);
+
+        //draw player's stable areas
+        //float width = 0;
+        //float height;
+        //sf::Vector2f position;
+        //position.x = otherPlayers[0].area.getGlobalBounds().left;
+        //position.y = otherPlayers[0].area.getGlobalBounds().top;
+        for (PlayerSpace& person : otherPlayers)
+        {
+            sf::FloatRect area = person.area.getGlobalBounds();
+            //width += area.width;
+            //height = area.height;
+            fenceVert.setPosition(area.left, area.height - fenceVert.getGlobalBounds().height);
+            window.draw(fenceVert);
+            fenceHoriz.setPosition(area.left, area.top + area.height);
+            window.draw(fenceHoriz);
+        }
+        
+        //window.draw();
 
         //card moves after mouse
         if (hoveredCard.isValid() && mousePress)
@@ -605,20 +647,7 @@ int main(void)
                     }
                 }
             }
-        }
-
-        for (PlayerSpace& person : otherPlayers)
-        {
-            sf::FloatRect area = person.area.getGlobalBounds();
-            sf::RectangleShape rectatangleArea;
-            rectatangleArea.setPosition(area.left, area.top);
-            rectatangleArea.setSize(sf::Vector2f(area.width, area.height));
-            rectatangleArea.setFillColor(sf::Color::Transparent);
-            rectatangleArea.setOutlineColor(sf::Color(255, 255, 255, 150));
-            rectatangleArea.setOutlineThickness(3);
-            window.draw(rectatangleArea);
-        }
-        
+        }        
 
         ImGui::SFML::Render(window);
         window.display();
