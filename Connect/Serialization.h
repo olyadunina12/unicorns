@@ -20,20 +20,19 @@ std::enable_if_t<std::is_enum_v<T>, S&> operator>>(S& stream, T& val)
 }
 
 template <typename T, typename S>
+std::enable_if_t<std::is_fundamental_v<T>, S&> operator<<(S& stream, T wrapper)
+{
+    stream << typeid(decltype(val)).name();
+    return (stream << wrapper);
+}
+
+template <typename T, typename S>
 std::enable_if_t<std::is_fundamental_v<T>, S&> operator>>(S& stream, T& wrapper)
 {
     std::string name;
     stream >> name;
 
     return (stream >> val);
-}
-
-template <typename T, typename S>
-std::enable_if_t<std::is_fundamental_v<T>, S&> operator<<(S& stream, T wrapper)
-{
-    stream << typeid(decltype(val)).name();
-
-    return (stream << wrapper);
 }
 
 template <typename T, typename = int>

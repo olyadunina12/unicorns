@@ -562,7 +562,7 @@ int main(void)
                     otherPlayerIncl = true;
                 }
             }
-            CardID ChosenId = cards[hoveredCard.id].ID;
+            CardID ChosenId = chosenCard.ID;
             if (myStableBounds.contains(mousePosition) && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
             {
                 myStableArea.setOutlineColor(sf::Color(255, 255, 255, (sf::Uint8)transparency));

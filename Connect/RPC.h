@@ -44,7 +44,7 @@ std::string generateNameWithArgs(const char* name)
             (appendWithSpace(nameWithArgs, typeid(decltype(x)).name()), ...);
         }, params);
     }
-    nameWithArgs += " )";
+    nameWithArgs += ")";
     return nameWithArgs;
 }
 
