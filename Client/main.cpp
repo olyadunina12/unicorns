@@ -17,11 +17,11 @@
 
 #include "../Connect/Unicorns.h"
 #include "../Connect/Parsing.h"
+#include "../Connect/RPC.h"
 #include "LocalServer.h"
 #include "CardVisuals.h"
-#include "Math.h"
 #include "Networking.h"
-#include "../Connect/RPC.h"
+#include "Math.h"
 
 struct gameState
 {
@@ -45,8 +45,37 @@ void syncDecks_Client(PlayerID owner, std::vector<CardID> hand, std::vector<Card
     printf("\n");
 }
 
+#include <queue>
+#include <functional>
+
+using Command = std::function<void(void)>;
+bool gShouldExit = false;
+std::mutex gCommandsLock;
+std::queue<Command> gCommandQueue;
+
+void gameplayLogic()
+{
+    while (!gShouldExit)
+    {
+        if (gCommandQueue.empty())
+        {
+            sf::sleep(sf::seconds(.3f));
+            continue;
+        }
+        Command cmd;
+        {
+            std::lock_guard autoLock(gCommandsLock);
+            cmd = gCommandQueue.front();
+            gCommandQueue.pop();
+        }
+        cmd();
+    }
+}
+
 int main(void)
 {
+    std::thread gameplayLogicThread(&gameplayLogic);
+
     REGISTER_RPC(syncDecks_Client);
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
@@ -284,7 +313,6 @@ int main(void)
     ServerHandles server{};
     std::thread serverCommsThread;
     std::mutex  serverCommsLock;
-    std::vector<std::string> serverOutput;
     while (window.isOpen())
     {
         ImGui::NewFrame();
@@ -475,25 +503,13 @@ int main(void)
 
         if (server.proc == nullptr && ImGui::Button("Start server"))
         {
-            serverOutput.clear();
             StartServerProcess(server);
         }
         else if (server.proc)
         {
-            std::string out;
-            if (ReadFromServer(server, out))
-            {
-                serverOutput.push_back(out);
-            }
-
             if (ImGui::Button("Stop server"))
             {
-                sendPacket(PACK_RPC(exit_Server));
                 StopServerProcess(server);
-            }
-            for (auto& It : serverOutput)
-            {
-                ImGui::TextUnformatted(It.c_str(), It.c_str() + It.size());
             }
         }
 
@@ -668,6 +684,8 @@ int main(void)
         window.display();
     }
 
+    gShouldExit = true;
+
     ImGui::SFML::Shutdown(window);
 
     if (server.proc)
@@ -676,6 +694,7 @@ int main(void)
         StopServerProcess(server);
     }
     if (networkingThread.joinable()) networkingThread.join();
+    if (gameplayLogicThread.joinable()) gameplayLogicThread.join();
 
     cleanup();
 }

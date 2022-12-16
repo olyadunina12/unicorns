@@ -95,7 +95,6 @@ void updateCardSettings()
     ImGui::SliderAngle("End angle", &gFanAngleEnd);
     ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
     ImGui::SliderFloat("End rotation", &gEndRotation, -50, 50);
-    ImGui::SliderFloat("Start rotation", &gStartRotation, -50, 50);
 
     ImGui::TextUnformatted("Shadow settings.");
     ImGui::SliderFloat2("Shadow offset", &gShadowOffset.x, -50, 50);
@@ -130,6 +129,7 @@ CardVisual createCard(CardID id, sf::Vector2f& pos)
     result.sprite.setPosition(pos);
     result.desiredPosition = pos;
     result.desiredRotation = 0;
+    result.desiredScale = sf::Vector2f(1,1);
     result.currentRotation = 0;
     result.ID = id;
 
