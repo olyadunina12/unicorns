@@ -10,7 +10,6 @@ enum class PacketType : sf::Uint8
 {
 	Invalid,
     Handshake,
-    Info,
     RPC,
 };
 
@@ -27,8 +26,7 @@ struct Card
     CardType Type;
     CardID ID;
     CardPack Pack;
-    sf::Uint8 Copies    : 7;
-    sf::Uint8 bIsNarwal : 1;
+    sf::Uint8 Copies;
 };
 
 struct Player
@@ -38,3 +36,10 @@ struct Player
     std::vector<CardID> Stable;
     PlayerID ID;
 };
+
+// server RPCs
+void exit_Server();
+
+// client RPCs
+void syncDecks_Client(PlayerID owner, std::vector<CardID> hand, std::vector<CardID> stable);
+

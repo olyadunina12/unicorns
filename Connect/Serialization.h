@@ -1,23 +1,38 @@
 #pragma once
 #include <SFML/Network.hpp>
 #include <type_traits>
+#include <cassert>
 
-template<typename T>
-std::enable_if_t<std::is_enum_v<T>, sf::Packet&> operator<<(sf::Packet& packet, T val)
+template<typename T, typename S>
+std::enable_if_t<std::is_enum_v<T>, S&> operator<<(S& stream, T val)
 {
-    return (packet << std::underlying_type_t<T>(val));
+    stream << typeid(decltype(val)).name();
+    return (stream << std::underlying_type_t<T>(val));
 }
 
-template<typename T>
-std::enable_if_t<std::is_enum_v<T>, sf::Packet&> operator>>(sf::Packet& packet, T& val)
+template<typename T, typename S>
+std::enable_if_t<std::is_enum_v<T>, S&> operator>>(S& stream, T& val)
 {
-    return (packet >> (std::underlying_type_t<T>&)(val));
+    std::string name;
+    stream >> name;
+
+    return (stream >> (std::underlying_type_t<T>&)(val));
 }
 
-template <typename T>
-std::enable_if_t<std::is_fundamental_v<T>, sf::Packet&> operator<<(sf::Packet& packet, T wrapper)
+template <typename T, typename S>
+std::enable_if_t<std::is_fundamental_v<T>, S&> operator<<(S& stream, T wrapper)
 {
-    return (packet << wrapper);
+    stream << typeid(decltype(val)).name();
+    return (stream << wrapper);
+}
+
+template <typename T, typename S>
+std::enable_if_t<std::is_fundamental_v<T>, S&> operator>>(S& stream, T& wrapper)
+{
+    std::string name;
+    stream >> name;
+
+    return (stream >> val);
 }
 
 template <typename T, typename = int>
@@ -26,45 +41,48 @@ struct has_value : std::false_type { };
 template <typename T>
 struct has_value <T, decltype((void) T::Value, 0)> : std::true_type { };
 
-template<typename T>
-std::enable_if_t<has_value<T>::value, sf::Packet&> operator<<(sf::Packet& packet, T wrapper)
+template<typename T, typename S>
+std::enable_if_t<has_value<T>::value, S&> operator<<(S& stream, T wrapper)
 {
-    return (packet << wrapper.Value);
+    stream << typeid(decltype(wrapper)).name();
+    return (stream << wrapper.Value);
 }
 
-template<typename T>
-std::enable_if_t<has_value<T>::value, sf::Packet&> operator>>(sf::Packet& packet, T& wrapper)
+template<typename T, typename S>
+std::enable_if_t<has_value<T>::value, S&> operator>>(S& stream, T& wrapper)
 {
-    return (packet >> wrapper.Value);
+    std::string name;
+    stream >> name;
+
+    return (stream >> wrapper.Value);
 }
 
-template <typename T, typename = int>
-struct is_container : std::false_type { };
-
-template <typename T>
-struct is_container <T, decltype((void) T::operator[], 0)> : std::true_type { };
-
-template<typename T>
-std::enable_if_t<is_container<T>::value, sf::Packet&> operator>>(sf::Packet& packet, T& container)
+template<typename T, typename S>
+S& operator>>(S& stream, std::vector<T>& container)
 {
+    std::string name;
+    stream >> name;
+
     size_t size;
-    assert(packet >> size);
+    assert(stream >> size);
     container.resize(size);
     for (int i = 0; i < size; ++i)
     {
-        assert(packet >> container[i]);
+        assert(stream >> container[i]);
     }
-    return packet;
+    return stream;
 }
 
-template<typename T>
-std::enable_if_t<is_container<T>::value, sf::Packet&> operator<<(sf::Packet& packet, const T& container)
+template<typename T, typename S>
+S& operator<<(S& stream, const std::vector<T>& container)
 {
-    assert(packet << container.size());
+    stream << typeid(decltype(container)).name();
+    auto size = container.size();
+    assert(stream << size);
     for (int i = 0; i < size; ++i)
     {
-        assert(packet >> container[i]);
+        assert(stream << container[i]);
     }
-    return packet;
+    return stream;
 }
 

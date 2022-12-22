@@ -17,11 +17,11 @@
 
 #include "../Connect/Unicorns.h"
 #include "../Connect/Parsing.h"
+#include "../Connect/RPC.h"
 #include "LocalServer.h"
 #include "CardVisuals.h"
-#include "Math.h"
 #include "Networking.h"
-#include "../Connect/RPC.h"
+#include "Math.h"
 
 struct gameState
 {
@@ -30,10 +30,53 @@ struct gameState
     std::vector<CardID> poolOfCards;
 };
 
+void syncDecks_Client(PlayerID owner, std::vector<CardID> hand, std::vector<CardID> stable)
+{
+    printf("%i\n", (int)owner.Value);
+    for (auto& It : hand)
+    {
+        printf("%i ", (int)It.Value);
+    }
+    printf("\n");
+    for (auto& It : stable)
+    {
+        printf("%i ", (int)It.Value);
+    }
+    printf("\n");
+}
+
+#include <queue>
+#include <functional>
+
+using Command = std::function<void(void)>;
+bool gShouldExit = false;
+std::mutex gCommandsLock;
+std::queue<Command> gCommandQueue;
+
+void gameplayLogic()
+{
+    while (!gShouldExit)
+    {
+        if (gCommandQueue.empty())
+        {
+            sf::sleep(sf::seconds(.3f));
+            continue;
+        }
+        Command cmd;
+        {
+            std::lock_guard autoLock(gCommandsLock);
+            cmd = gCommandQueue.front();
+            gCommandQueue.pop();
+        }
+        cmd();
+    }
+}
 
 int main(void)
 {
-    //REGISTER_RPC(playCard);
+    std::thread gameplayLogicThread(&gameplayLogic);
+
+    REGISTER_RPC(syncDecks_Client);
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Unstable Unicorns");
 
@@ -270,7 +313,6 @@ int main(void)
     ServerHandles server{};
     std::thread serverCommsThread;
     std::mutex  serverCommsLock;
-    std::vector<std::string> serverOutput;
     while (window.isOpen())
     {
         ImGui::NewFrame();
@@ -443,7 +485,6 @@ int main(void)
                     cards.push_back(newCard);
                     handCardPositioning(cards, cardHandPosition, -1);
                 }
-
             }
         }
 
@@ -462,29 +503,19 @@ int main(void)
 
         if (server.proc == nullptr && ImGui::Button("Start server"))
         {
-            serverOutput.clear();
             StartServerProcess(server);
         }
         else if (server.proc)
         {
-            std::string out;
-            if (ReadFromServer(server, out))
-            {
-                serverOutput.push_back(out);
-            }
-
             if (ImGui::Button("Stop server"))
             {
                 StopServerProcess(server);
-            }
-            for (auto& It : serverOutput)
-            {
-                ImGui::TextUnformatted(It.c_str(), It.c_str() + It.size());
             }
         }
 
         ImGui::End();
 #endif
+        tickNetwork();
 
         // cards positioning simulation
         for (int i = 0; i < (int)Pile::count; i++)
@@ -548,7 +579,7 @@ int main(void)
                     otherPlayerIncl = true;
                 }
             }
-            CardID ChosenId = cards[hoveredCard.id].ID;
+            CardID ChosenId = chosenCard.ID;
             if (myStableBounds.contains(mousePosition) && cardDescs[ChosenId.Value].Type != CardType::Instant && cardDescs[ChosenId.Value].Type != CardType::Magic)
             {
                 myStableArea.setOutlineColor(sf::Color(255, 255, 255, (sf::Uint8)transparency));
@@ -654,10 +685,17 @@ int main(void)
         window.display();
     }
 
+    gShouldExit = true;
+
     ImGui::SFML::Shutdown(window);
 
-    if (server.proc) StopServerProcess(server);
+    if (server.proc)
+    {
+        sendPacket(PACK_RPC(exit_Server));
+        StopServerProcess(server);
+    }
     if (networkingThread.joinable()) networkingThread.join();
+    if (gameplayLogicThread.joinable()) gameplayLogicThread.join();
 
     cleanup();
 }
