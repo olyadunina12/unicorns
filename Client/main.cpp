@@ -501,23 +501,24 @@ int main(void)
         window.clear();
         window.draw(bgSprite);
 
-        //draw player's stable areas
-        //float width = 0;
-        //float height;
-        //sf::Vector2f position;
-        //position.x = otherPlayers[0].area.getGlobalBounds().left;
-        //position.y = otherPlayers[0].area.getGlobalBounds().top;
         for (PlayerSpace& person : otherPlayers)
         {
             sf::FloatRect area = person.area.getGlobalBounds();
-            //width += area.width;
-            //height = area.height;
             fenceVert.setPosition(area.left, area.height - fenceVert.getGlobalBounds().height);
             window.draw(fenceVert);
-            fenceHoriz.setPosition(area.left, area.top + area.height);
+        }
+
+        float widthPlayers = rectTableSize.x;
+        float widthFence = fenceHoriz.getLocalBounds().width;
+        int fenceQuantity = widthPlayers/ widthFence;
+        float a = (widthFence * fenceQuantity - widthPlayers)/3;
+
+        for (int i = 0; i <= fenceQuantity; i++)
+        {
+            fenceHoriz.setPosition(rectTablePosition.x + widthFence * i, rectTablePosition.y);
             window.draw(fenceHoriz);
         }
-        
+                   
         //window.draw();
 
         //card moves after mouse
