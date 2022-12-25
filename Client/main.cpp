@@ -22,6 +22,7 @@
 #include "CardVisuals.h"
 #include "Networking.h"
 #include "Math.h"
+#include "GameplayLogic.h"
 
 struct gameState
 {
@@ -45,36 +46,25 @@ void syncDecks_Client(PlayerID owner, std::vector<CardID> hand, std::vector<Card
     printf("\n");
 }
 
-#include <queue>
-#include <functional>
-
-using Command = std::function<void(void)>;
-bool gShouldExit = false;
-std::mutex gCommandsLock;
-std::queue<Command> gCommandQueue;
-
-void gameplayLogic()
+struct CardSelection
 {
-    while (!gShouldExit)
+    int id = -1;
+    CardPile pile;
+
+    void reset()
     {
-        if (gCommandQueue.empty())
-        {
-            sf::sleep(sf::seconds(.3f));
-            continue;
-        }
-        Command cmd;
-        {
-            std::lock_guard autoLock(gCommandsLock);
-            cmd = gCommandQueue.front();
-            gCommandQueue.pop();
-        }
-        cmd();
+        id = -1;
     }
-}
+
+    bool isValid()
+    {
+        return id != -1;
+    }
+};
 
 int main(void)
 {
-    std::thread gameplayLogicThread(&gameplayLogic);
+    startGameplayThread();
 
     REGISTER_RPC(syncDecks_Client);
 
@@ -212,7 +202,7 @@ int main(void)
 
     //randomize the order of baby-unicorns
     std::shuffle(poolOfBabies.begin(), poolOfBabies.end(), std::default_random_engine(seed));
-      
+
     //create card texture
     loadAllTextures();
 
@@ -364,7 +354,7 @@ int main(void)
                     }
                 }
 
-                if (hoveredCard.isValid() && hoveredCard.pile == Pile::hand)
+                if (hoveredCard.isValid() && hoveredCard.pile == CardPile::Hand)
                 {
                     CardID ChosenId = cards[hoveredCard.id].ID;
                     CardType type = cardDescs[ChosenId.Value].Type;
@@ -412,7 +402,7 @@ int main(void)
                     iconsPositioning(person.stable, person.area);
                 }
                 handCardPositioning(cards, cardHandPosition, -1);
-                for (int i = 0; i < ((int)Pile::count - 1); i++)
+                for (int i = 0; i < ((int)CardPile::count - 1); i++)
                 {
                     stablePositioning(*piles[i], *stablePositions[i], -1);
                 }
@@ -436,14 +426,14 @@ int main(void)
                     continue;
 
                 int candidate = -1;
-                Pile candidatePile = Pile::unicorns;
+                CardPile candidatePile = CardPile::Unicorns;
 
-                for (int i = 0; i < (int)Pile::count; i++)
+                for (int i = 0; i < (int)CardPile::count; i++)
                 {
                     candidate = cardChosen(*piles[i], candidate, mousePosition);
                     if (candidate != -1)
                     {
-                        candidatePile = (Pile)i;
+                        candidatePile = (CardPile)i;
                         break;
                     }
                 }
@@ -453,14 +443,14 @@ int main(void)
                     hoveredCard.pile = candidatePile;
 
                     handCardPositioning(cards, cardHandPosition, -1);
-                    for (int i = 0; i < ((int)Pile::count - 1); i++)
+                    for (int i = 0; i < ((int)CardPile::count - 1); i++)
                     {
                         stablePositioning(*piles[i], *stablePositions[i], -1);
                     }
 
                     if (hoveredCard.isValid())
                     {
-                        if (candidatePile == Pile::hand)
+                        if (candidatePile == CardPile::Hand)
                         {
                             handCardPositioning(cards, cardHandPosition, hoveredCard.id);
                         }
@@ -480,10 +470,15 @@ int main(void)
                 //cards appearing when space button is pressed
                 else if (event.key.code == sf::Keyboard::Space)
                 {
+                    pushGameplayCmd([]() {
+                        userAskQuestion("?", {"lol", "kek"});
+                    });
+                    /*
                     CardVisual newCard = createCard(poolOfCards.back(), cardHandPosition);
                     poolOfCards.pop_back();
                     cards.push_back(newCard);
                     handCardPositioning(cards, cardHandPosition, -1);
+                    */
                 }
             }
         }
@@ -518,7 +513,7 @@ int main(void)
         tickNetwork();
 
         // cards positioning simulation
-        for (int i = 0; i < (int)Pile::count; i++)
+        for (int i = 0; i < (int)CardPile::count; i++)
         {
             simulation(*piles[i]);
         }
@@ -548,8 +543,6 @@ int main(void)
             fenceHoriz.setPosition(area.left, area.top + area.height);
             window.draw(fenceHoriz);
         }
-        
-        //window.draw();
 
         //card moves after mouse
         if (hoveredCard.isValid() && mousePress)
@@ -598,6 +591,8 @@ int main(void)
             else
                 transparency = 0;
         }
+
+        tickGameplayLogic();
 
         ImGui::EndFrame();
 
@@ -678,13 +673,11 @@ int main(void)
                     }
                 }
             }
-        }        
+        }
 
         ImGui::SFML::Render(window);
         window.display();
     }
-
-    gShouldExit = true;
 
     ImGui::SFML::Shutdown(window);
 
@@ -694,7 +687,8 @@ int main(void)
         StopServerProcess(server);
     }
     if (networkingThread.joinable()) networkingThread.join();
-    if (gameplayLogicThread.joinable()) gameplayLogicThread.join();
+
+    stopGameplayThread();
 
     cleanup();
 }

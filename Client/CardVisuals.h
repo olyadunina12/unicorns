@@ -2,8 +2,6 @@
 #include <SFML/Graphics.hpp>
 #include "../Connect/Unicorns.h"
 
-enum class Pile : uint8_t { unicorns, bonuses, penalties, hand, count };
-
 struct CardVisual
 {
     sf::Sprite sprite;
@@ -12,15 +10,6 @@ struct CardVisual
     float desiredRotation;
     float currentRotation;
     CardID ID;
-};
-
-struct CardSelection
-{
-    int id = -1;
-    Pile pile;
-
-    void reset();
-    bool isValid();
 };
 
 struct PlayerSpace

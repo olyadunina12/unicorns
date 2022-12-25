@@ -6,18 +6,17 @@
 
 #define HANDSHAKE_MAGIC_STRING "UNICORNS_HANDSHAKE_MAGIC"
 
-enum class PacketType : sf::Uint8
-{
-	Invalid,
-    Handshake,
-    RPC,
-};
+enum class PacketType : uint8_t { Invalid, Handshake, RPC };
 
-struct CardID { sf::Uint8 Value; };
-struct PlayerID { sf::Uint8 Value; };
-
+enum class CardPile : uint8_t { Unicorns, Bonuses, Penalties, Hand, count };
 enum class CardType : uint8_t { BabyUnicorn, BasicUnicorn, MagicalUnicorn, Magic, Upgrade, Downgrade, Instant, count };
 enum class CardPack : uint8_t { BasePack, AdventuresPack, DragonsPack, RainbowApocalypsePack, UnicornsOfLegendPack, count };
+
+struct CardID   { sf::Uint8 Value; };
+struct PlayerID { sf::Uint8 Value; };
+
+static const CardID   InvalidCardID   { -1 };
+static const PlayerID InvalidPlayerID { -1 };
 
 struct Card
 {

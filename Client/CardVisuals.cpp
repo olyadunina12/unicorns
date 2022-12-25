@@ -105,7 +105,6 @@ void updateCardSettings()
 #endif
 }
 
-
 CardVisual createIcon(CardID id, sf::Vector2f& pos, CardType type)
 {
     CardVisual result;
@@ -207,6 +206,7 @@ void stablePositioning(std::vector<CardVisual>& stable, const sf::Vector2f& card
         }
     }
 }
+
 void iconsPositioning(std::vector<CardVisual>& stable, sf::RectangleShape& area)
 {
     for (int i = 0; i < stable.size(); i++)
@@ -293,16 +293,6 @@ void drawHighlight(sf::Sprite& picture, sf::RenderWindow& window)
     cardHighlight.setScale(picture.getScale() * 1.05f);
     cardHighlight.setOutlineThickness(5);
     window.draw(cardHighlight);
-}
-
-void CardSelection::reset()
-{
-    id = -1;
-}
-
-bool CardSelection::isValid()
-{
-    return id != -1;
 }
 
 PlayerSpace createPlayerSpace(const std::string& playerName, sf::Font& font, sf::FloatRect area, sf::Texture& gradient)
